@@ -1,0 +1,15 @@
+﻿{
+	"version": "0.4.0",
+	"upgrade levels": {
+		"0": {
+			"Walls": "1 1 10 3 Living",
+			"Floors":  "1 3 10 9 Living",
+			"Rooms": "Living Living"
+		},
+		"1": {
+			"Walls": "1 1 6 3 Kitchen 7 1 11 3 Living 18 6 2 2 Living 20 1 9 3 Bedroom",
+			"Floors": "1 3 6 9 Kitchen 7 3 11 9 Living 18 8 2 2 Living 20 3 9 8 Bedroom",
+			"Rooms" :  "Kitchen Kitchen Living Living Bedroom MasterBed"
+		}
+	}
+}
