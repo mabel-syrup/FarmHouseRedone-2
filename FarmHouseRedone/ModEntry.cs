@@ -84,7 +84,10 @@ namespace FarmHouseRedone
                 prefix: new HarmonyMethod(AccessTools.Method(typeof(DecoratableLocation_getFloorAt_Patch), nameof(DecoratableLocation_getFloorAt_Patch.Prefix)))
             );
 
-
+            harmony.Patch(
+                original: helper.Reflection.GetMethod(new GameLocation(), "houseUpgradeOffer").MethodInfo,
+                prefix: new HarmonyMethod(AccessTools.Method(typeof(GameLocation_houseUpgradeOffer_Patch), nameof(GameLocation_houseUpgradeOffer_Patch.Prefix)))
+            );
 
             harmony.Patch(
                 original: AccessTools.Method(typeof(StardewValley.Objects.Wallpaper), nameof(StardewValley.Objects.Wallpaper.placementAction)),
@@ -97,7 +100,25 @@ namespace FarmHouseRedone
 
             helper.Events.GameLoop.GameLaunched += GameLoop_GameLaunched;
             helper.Events.GameLoop.SaveLoaded += GameLoop_SaveLoaded;
+            helper.Events.GameLoop.DayStarted += GameLoop_DayStarted;
+            helper.Events.GameLoop.DayEnding += GameLoop_DayEnding;
             helper.Events.Input.ButtonPressed += Input_ButtonPressed;
+        }
+
+        private void GameLoop_DayEnding(object sender, StardewModdingAPI.Events.DayEndingEventArgs e)
+        {
+            foreach (FarmHouseState state in StatesHandler.houseStates.Values)
+            {
+                state.DayEnding();
+            }
+        }
+
+        private void GameLoop_DayStarted(object sender, StardewModdingAPI.Events.DayStartedEventArgs e)
+        {
+            foreach(FarmHouseState state in StatesHandler.houseStates.Values)
+            {
+                state.DayStarted();
+            }
         }
 
         private void Input_ButtonPressed(object sender, StardewModdingAPI.Events.ButtonPressedEventArgs e)

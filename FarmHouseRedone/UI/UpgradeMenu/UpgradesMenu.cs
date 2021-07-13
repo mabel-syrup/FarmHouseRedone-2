@@ -20,6 +20,8 @@ namespace FarmHouseRedone.UI
         public Vector2 animationController;
         States.FarmHouseState state;
 
+        public ContentPacks.UpgradeModel selectedModel;
+
         public bool isOpeningAnimation;
 
         public Rectangle bounds;
@@ -51,6 +53,8 @@ namespace FarmHouseRedone.UI
                 }
                 items.Add(new UpgradeMenuItem(state.packID, model, (Game1.viewport.Width/2 - 600) + (i % 2) * 600, bounds.Y + yMargin/2 + ((11 - i)/2) * 100, i >=10, SelectionMade));
             }
+
+            selectedModel = null;
 
             openingAnimation = new Animation(new List<KeyFrame>
             {
@@ -91,8 +95,40 @@ namespace FarmHouseRedone.UI
         public void SelectionMade(ContentPacks.UpgradeModel model)
         {
             Logger.Log("Selected " + model.GetName());
-            this.cleanupBeforeExit();
-            Game1.activeClickableMenu = new HousePreviewMenu(state, model);
+            selectedModel = model;
+            string costString = "";
+            Dictionary<StardewValley.Object, int> materials = model.GetMaterials();
+            List<StardewValley.Object> orderedKeyList = materials.Keys.ToList();
+            for (int i = 0; i < materials.Count; i++)
+            {
+                costString += materials[orderedKeyList[i]] + " " + orderedKeyList[i].name + (i == materials.Count - 2 ? ", and " : (i == materials.Count - 1 ? "." : " "));
+            }
+
+            Game1.currentLocation.createQuestionDialogue(
+                model.GetDescription() + $"  This will take {model.GetDays()} days to complete, plus {model.GetPrice().ToString() + "g"} and {costString}  Are you interested?",
+                Game1.currentLocation.createYesNoResponses(),
+                ConfirmSelection,
+                Game1.getCharacterFromName("Robin"));
+        }
+
+        public void ConfirmSelection(Farmer who, string which)
+        {
+            Logger.Log(who.name + " chose " + which);
+            if (which.Equals("Yes"))
+            {
+                state.SetCurrentUpgrade(selectedModel.ID, selectedModel.GetDays());
+                string confirmDialogue = Translation.Translate("upgradeConfirm", selectedModel.GetDays(), selectedModel.GetDays() == 1 ? Translation.Translate("daySingular") : Translation.Translate("dayPlural"));
+                Game1.drawDialogue(Game1.getCharacterFromName("Robin"), confirmDialogue);
+            }
+            else
+            {
+                selectedModel = null;
+                foreach(UpgradeMenuItem item in items)
+                {
+                    item.isSelected = false;
+                }
+                Game1.activeClickableMenu = this;
+            }
         }
 
         public override void performHoverAction(int x, int y)
@@ -124,6 +160,10 @@ namespace FarmHouseRedone.UI
         {
             bg.draw(b); 
             b.Draw(Loader.spriteSheet, new Vector2(bounds.X + 16, 650 - 64 - 56), new Rectangle(0, 68, 150, 75), Color.White, 0f, Vector2.Zero, 8f, SpriteEffects.None, 1f);
+            if (!isOpeningAnimation)
+                b.Draw(Loader.spriteSheet, new Rectangle(bounds.X + 16, -64 - 64, 1200, 192), new Rectangle(154, 68, 8, 24), Color.Wheat);
+            b.Draw(Loader.spriteSheet, new Rectangle(bounds.X - 48 - 64, 0, 128, Game1.viewport.Height), new Rectangle(150, 83, 16, 8), Color.Wheat);
+            b.Draw(Loader.spriteSheet, new Rectangle(bounds.X + 16 + 1200, 0, 128, Game1.viewport.Height), new Rectangle(150, 83, 16, 8), Color.Wheat);
             /*IClickableMenu.drawTextureBox(
                 b,
                 Game1.mouseCursors,
@@ -142,7 +182,11 @@ namespace FarmHouseRedone.UI
             }
             b.Draw(Loader.spriteSheet, new Vector2(bounds.X + 16, bounds.Bottom) + animationController, new Rectangle(0, 68, 150, 75), Color.White, 0f, Vector2.Zero, 8f, SpriteEffects.None, 1f);
             //b.Draw(Loader.spriteSheet, new Rectangle(bounds.X - 48, -64, 64, 128), new Rectangle(150, 68, 8, 16), Color.Wheat);
-            b.Draw(Loader.spriteSheet, new Rectangle(bounds.X + 16, -64 - 64, 1200, 192), new Rectangle(154, 68, 8, 24), Color.Wheat);
+            //Draw Filing Cabinet Frame
+            if(isOpeningAnimation)
+                b.Draw(Loader.spriteSheet, new Rectangle(bounds.X + 16, -64 - 64, 1200, 192), new Rectangle(154, 68, 8, 24), Color.Wheat);
+            /*b.Draw(Loader.spriteSheet, new Rectangle(bounds.X - 48 - 64, 64, 128, 64), new Rectangle(150, 75, 16, 8), Color.Wheat);
+            b.Draw(Loader.spriteSheet, new Rectangle(bounds.X + 16 + 1200, 64, 128, 64), new Rectangle(150, 67, 16, 8), Color.Wheat);*/
             //b.Draw(Loader.spriteSheet, new Rectangle(bounds.Right + 16, -64, 64, 128), new Rectangle(158, 68, 8, 16), Color.Wheat);
             Utility.drawTextWithShadow(b, "Blueprints", Game1.dialogueFont, new Vector2(bounds.X + 600 - Game1.dialogueFont.MeasureString("Blueprints").X * 0.75f, bounds.Bottom + 168) + animationController, Color.Red, shadowIntensity: 0, scale: 1.5f);
             //base.draw(b);

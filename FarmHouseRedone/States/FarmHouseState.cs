@@ -579,35 +579,57 @@ namespace FarmHouseRedone.States
         public FarmHouse location;
         public string packID;
 
+        public int daysUntilUpgrade;
+        public string upgradeID;
+
         public Vector2 offset;
 
         public List<string> appliedUpgrades;
 
-        public FarmHouseState(FarmHouseState clone)
-        {
-            offset = clone.offset;
-            location = new FarmHouse("Maps\\FarmHouse", "Dummy");
-            location.upgradeLevel = clone.location.upgradeLevel;
-            packID = clone.packID;
-            mapPath = GetBaseMapPath();
-            Reset();
-        }
-
         public FarmHouseState(FarmHouse house)
         {
             offset = Vector2.Zero;
+            appliedUpgrades = new List<string>();
             location = house;
             packID = "";
+            upgradeID = "";
+            daysUntilUpgrade = 0;
             Load();
             mapPath = GetBaseMapPath();
             Reset();
         }
 
+        public void DayStarted()
+        {
+            Load();
+            if (daysUntilUpgrade > 0)
+                daysUntilUpgrade--;
+            if(daysUntilUpgrade == 0 && upgradeID != "")
+            {
+                ContentPacks.UpgradeModel model = ContentPacks.PackHandler.GetPackData(packID).GetModel(upgradeID);
+                if (model.IsBase())
+                {
+                    location.upgradeLevel = model.GetBase();
+                }
+                else
+                {
+                    appliedUpgrades.Add(model.ID);
+                }
+            }
+            mapPath = GetBaseMapPath();
+            Reset();
+        }
+
+        public void DayEnding()
+        {
+            Save();
+        }
+
         public void Reset()
         {
             offset = Vector2.Zero;
-            appliedUpgrades = new List<string>();
             UpdateFromMapPath();
+            StatesHandler.GetDecorState(location).Reset();
         }
 
         public void UpdateMap()
@@ -624,40 +646,20 @@ namespace FarmHouseRedone.States
             //StatesHandler.GetDecorState(location).Reset();
         }
 
+        public void SetCurrentUpgrade(string ID, int days)
+        {
+            upgradeID = ID;
+            daysUntilUpgrade = days;
+        }
+
         public void ApplyUpgrade(ContentPacks.UpgradeModel model)
         {
             IContentPack pack = ContentPacks.PackHandler.GetPack(packID);
             Logger.Log("Pasting upgrade " + model.ID + " at " + model.Position);
             Map upgradeMap = pack.LoadAsset<Map>(model.GetMap());
             MapSection upgrade = new MapSection(model.ID, upgradeMap);
-            Vector2 position = ConvertPosition(model);
+            Vector2 position = model.ConvertPosition(offset, location.map);
             upgrade.Paste(this, (int)position.X, (int)position.Y);
-        }
-
-        private Vector2 ConvertPosition(ContentPacks.UpgradeModel model)
-        {
-            string[] positionValues = model.GetPosition().Split(' ');
-            try
-            {
-                Vector2 mapBounds = MapUtilities.GetMapSize(location.map);
-                Vector2 position = Vector2.Zero;
-                if (positionValues[0].StartsWith("<"))
-                    position.X = mapBounds.X - Convert.ToInt32(positionValues[0].Substring(1));
-                else
-                    position.X = Convert.ToInt32(positionValues[0]) + offset.X;
-
-                if (positionValues[1].StartsWith("<"))
-                    position.Y = mapBounds.Y - Convert.ToInt32(positionValues[1].Substring(1));
-                else
-                    position.Y = Convert.ToInt32(positionValues[1]) + offset.Y;
-                return position;
-            }
-            catch (IndexOutOfRangeException)
-            {
-                Logger.Log($"Couldn't parse the position value for upgrade \"{model.ID}\"!  " +
-                    $"Positions must be given as\n\tx y\nwith a coordinate prefaced with \"<\" to denote it is measured from the left or bottom.", LogLevel.Warn);
-                return new Vector2(-1000,-1000);
-            }
         }
 
         public string GetBaseMapPath()
@@ -719,7 +721,10 @@ namespace FarmHouseRedone.States
             }
             else
             {
-                this.packID = model.PackID;
+                this.packID = model.PackID ?? "";
+                appliedUpgrades = model.AppliedUpgrades ?? new List<string>();
+                daysUntilUpgrade = model.DaysUntilUpgrade;
+                upgradeID = model.UpgradeID ?? "";
                 Logger.Log("Loaded pack FHR Pack: " + packID);
             }
         }
@@ -738,6 +743,9 @@ namespace FarmHouseRedone.States
 
             IO.FarmHouseModel model = new IO.FarmHouseModel();
             model.PackID = packID;
+            model.AppliedUpgrades = appliedUpgrades;
+            model.DaysUntilUpgrade = daysUntilUpgrade;
+            model.UpgradeID = upgradeID;
             Loader.data.WriteSaveData<IO.FarmHouseModel>("FH-" + location.name + location.uniqueName ?? "", model);
         }
     }

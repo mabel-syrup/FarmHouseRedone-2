@@ -15,5 +15,17 @@ namespace FarmHouseRedone.UI
         {
             return translation.Get(key);
         }
+
+        public static string Translate(string key, params object[] args)
+        {
+            try
+            {
+                return string.Format(Translate(key), args);
+            }
+            catch (FormatException)
+            {
+                return Translate(key);
+            }
+        }
     }
 }

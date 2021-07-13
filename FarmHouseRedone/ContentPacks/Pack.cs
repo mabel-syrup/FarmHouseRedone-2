@@ -20,5 +20,15 @@ namespace FarmHouseRedone.ContentPacks
             }
             return null;
         }
+
+        public UpgradeModel GetModel(string ID)
+        {
+            foreach (UpgradeModel model in Upgrades)
+            {
+                if (model.ID == ID)
+                    return model;
+            }
+            return null;
+        }
     }
 }

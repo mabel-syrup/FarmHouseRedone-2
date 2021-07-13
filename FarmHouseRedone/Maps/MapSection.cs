@@ -52,7 +52,42 @@ namespace FarmHouseRedone.Maps
             anchorY = 0;
         }
 
+        public void Paste(ref Vector2 offset, Map houseMap, int pasteX, int pasteY)
+        {
+            Dictionary<TileSheet, TileSheet> equivalentSheets = MapUtilities.GetEquivalentSheets(houseMap, map, true);
+            houseMap.LoadTileSheets(Game1.mapDisplayDevice);
+            //This gets us the paste bounds as relative to the existing map.  A negative x would mean to the left of 0.
+            Rectangle pasteBounds = GetPasteBounds(pasteX, pasteY);
 
+            //If the map section's bounds extend past the bounds in the left or up directions, we need to adjust the whole map.
+            //The values are inverted such that this is now a value of how much to adjust by.
+            Vector2 adjustment = new Vector2(-Math.Min(0, pasteBounds.X), -Math.Min(0, pasteBounds.Y));
+
+            //Resize the map such that there is enough room to paste the map section.  
+            MapUtilities.ResizeMapAtLeast(houseMap, pasteBounds.Width, pasteBounds.Height, (int)adjustment.X, (int)adjustment.Y);
+
+            //Get the actual sizes of the two maps.  The host map has been resized already.
+            Vector2 mapSize = MapUtilities.GetMapSize(map);
+            Vector2 hostMapSize = MapUtilities.GetMapSize(houseMap);
+
+            for (int x = 0; x < mapSize.X && pasteX + x + adjustment.X - anchorX < hostMapSize.X; x++)
+            {
+                int destX = pasteX + x + (int)adjustment.X - anchorX;
+                for (int y = 0; y < mapSize.Y && pasteY + y + adjustment.Y - anchorY < hostMapSize.Y; y++)
+                {
+                    int destY = pasteY + y + (int)adjustment.Y - anchorY;
+                    MapUtilities.PasteTile(houseMap, map, x, y, destX, destY, equivalentSheets, 2);
+                }
+            }
+            MapUtilities.OffsetProperties(map, pasteX - anchorX, pasteY - anchorY);
+            foreach (KeyValuePair<string, PropertyValue> pair in map.Properties)
+            {
+                if (pair.Key == "Anchor")
+                    continue;
+                MapUtilities.MergeProperties(houseMap, pair.Key, pair.Value.ToString());
+            }
+            offset += adjustment;
+        }
 
         public void Paste(States.FarmHouseState state, int pasteX, int pasteY)
         {
@@ -94,7 +129,7 @@ namespace FarmHouseRedone.Maps
                 }
             }
             MapUtilities.OffsetProperties(map, pasteX - anchorX, pasteY - anchorY);
-            foreach(KeyValuePair<string, PropertyValue> pair in map.Properties)
+            foreach (KeyValuePair<string, PropertyValue> pair in map.Properties)
             {
                 if (pair.Key == "Anchor")
                     continue;

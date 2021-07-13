@@ -149,7 +149,7 @@ namespace FarmHouseRedone.UI
             b.Draw(Loader.spriteSheet, new Vector2(this.bounds.X + 150 - 24, this.bounds.Y - 20 + yOffset) + animationController, new Rectangle(upgrade.IsBase() ? 15 : 0, 0, 6, 15), map != null ? Color.White : Color.BlanchedAlmond, 0f, Vector2.Zero, 4f, SpriteEffects.None, 1f);
             b.Draw(Loader.spriteSheet, new Rectangle(bounds.X + 150 + (int)animationController.X, bounds.Y - 20 + yOffset + (int)animationController.Y, nameWidth, 60), new Rectangle(6 + (upgrade.IsBase() ? 15 : 0), 0, 3, 15), map != null ? Color.White : Color.BlanchedAlmond);
             b.Draw(Loader.spriteSheet, new Vector2(this.bounds.X + 150 + nameWidth, this.bounds.Y - 20 + yOffset) + animationController, new Rectangle(9 + (upgrade.IsBase() ? 15 : 0), 0, 6, 15), map != null ? Color.White : Color.BlanchedAlmond, 0f, Vector2.Zero, 4f, SpriteEffects.None, 1f);
-            Utility.drawTextWithShadow(b, upgrade.GetName(), Game1.dialogueFont, new Vector2(bounds.X + 150, bounds.Y - 12 + yOffset) + animationController, Game1.textColor);
+            Utility.drawTextWithShadow(b, upgrade.GetName(), Game1.dialogueFont, new Vector2(bounds.X + 150, bounds.Y - 12 + yOffset) + animationController, Game1.textColor, shadowIntensity: (upgrade.IsBase() ? 0 : 1));
             Utility.drawTextWithShadow(b, Strings.Fit(upgrade.GetDescription(), Game1.smallFont, new Vector2(bounds.Width - 166, 100)), Game1.smallFont, new Vector2(bounds.X + 150, bounds.Y + 65 + yOffset) + animationController, Color.White, shadowIntensity: 0);
         }
 
@@ -171,26 +171,14 @@ namespace FarmHouseRedone.UI
                 return;
             IClickableMenu.drawTextureBox(
                 b,
-                Game1.mouseCursors,
-                new Rectangle(293, 360, 24, 24),
+                Loader.spriteSheet,
+                new Rectangle(61, 0, 15, 15),
                 this.bounds.X + (int)animationController.X,
                 this.bounds.Y + yOffset + (int)animationController.Y,
                 128 + 12,
-                128 + 12,
+                128 + 18,
                 Color.White,
-                2f,
-                false
-            );
-            IClickableMenu.drawTextureBox(
-                b,
-                Game1.mouseCursors,
-                new Rectangle(477, 40, 16, 16),
-                this.bounds.X + 6 + (int)animationController.X,
-                this.bounds.Y + 6 + yOffset + (int)animationController.Y,
-                128,
-                128,
-                Color.White,
-                2f,
+                3f,
                 false
             );
             //477
@@ -198,7 +186,10 @@ namespace FarmHouseRedone.UI
             {
                 layer.Draw(Game1.mapDisplayDevice, new xTile.Dimensions.Rectangle(0, 0, 128, 128), new xTile.Dimensions.Location(bounds.X + 6 + (int)animationController.X, bounds.Y + 6 + yOffset + (int)animationController.Y), false, 1);
             }
-            b.Draw(Loader.spriteSheet, new Vector2(this.bounds.X - 16, this.bounds.Y + 80 + yOffset) + animationController, new Rectangle(32, 0, 28, 15), Color.White, 0f, Vector2.Zero, 4f, SpriteEffects.None, 1f);
+            if(bounds.Y + animationController.Y > 50)
+                b.Draw(Loader.spriteSheet, new Vector2(this.bounds.X - 16, this.bounds.Y + 80 + yOffset) + animationController, new Rectangle(32, 0, 28, 15), Color.White, 0f, Vector2.Zero, 4f, SpriteEffects.None, 1f);
+            else
+                b.Draw(Loader.spriteSheet, new Vector2(this.bounds.X - 8, this.bounds.Y + 80 + yOffset) + animationController, new Rectangle(34, 0, 24, 15), Color.White, 0f, Vector2.Zero, 4f, SpriteEffects.None, 1f);
         }
     }
 }

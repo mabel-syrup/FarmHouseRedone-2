@@ -1,4 +1,9 @@
 ﻿{
   "packSelectionTitle": "Select a FarmHouse Redone pack to use!",
-  "blueprintsDrawer" :  "Blueprints"
+  "blueprintsDrawer": "Blueprints",
+  "upgradeConfirm": "Thank you! I'll get started tomorrow. It should be ready in about {0} {1}.$1",
+  "dayPlural": "days",
+  "daySingular": "day",
+  "houseUpgradeDialogue": "Oh you want me to work on your house?  Sure, I have some ideas written down right here!",
+  "houseUpgradeDialogue_noUpgrades" :  "Sorry, {0}! I just can't think of anything more I can add to your house!$s"
 }

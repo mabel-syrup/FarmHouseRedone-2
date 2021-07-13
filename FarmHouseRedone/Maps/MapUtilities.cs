@@ -95,6 +95,26 @@ namespace FarmHouseRedone.Maps
             }
         }
 
+        public static Map CloneMap(Map original)
+        {
+            Map map = new Map();
+            Dictionary<TileSheet, TileSheet> clonedSheets = GetEquivalentSheets(map, original, true);
+            foreach(Layer layer in original.Layers)
+            {
+                Layer newLayer = new Layer(layer.Id, map, layer.LayerSize, layer.TileSize);
+                map.AddLayer(newLayer);
+                for(int x = 0; x < newLayer.LayerWidth; x++)
+                {
+                    for(int y = 0; y < newLayer.LayerHeight; y++)
+                    {
+                        if (layer.Tiles[x, y] != null)
+                            CloneTile(layer.Tiles[x, y], clonedSheets, newLayer, x, y);
+                    }
+                }
+            }
+            return map;
+        }
+
         public static void OffsetProperties(Map map, int xOffset, int yOffset)
         {
             Dictionary<string, string> updatedProperties = new Dictionary<string, string>();

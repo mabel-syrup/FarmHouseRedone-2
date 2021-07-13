@@ -84,6 +84,7 @@
     <Compile Include="States\StatesHandler.cs" />
     <Compile Include="States\Upgrade.cs" />
     <Compile Include="UI\Animation.cs" />
+    <Compile Include="UI\DecoratableInfoLayer.cs" />
     <Compile Include="UI\HousePreviewMenu.cs" />
     <Compile Include="UI\KeyFrame.cs" />
     <Compile Include="UI\PackMenu\ConfirmButton.cs" />
