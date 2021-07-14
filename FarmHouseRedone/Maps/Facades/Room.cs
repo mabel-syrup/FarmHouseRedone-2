@@ -27,6 +27,54 @@ namespace FarmHouseRedone.Maps
             floorIndex = 0;
         }
 
+        public void Init(Map map)
+        {
+            bool wallFound = false;
+            foreach (Wall wall in walls)
+            {
+                if (wallFound)
+                    break;
+                for (int x = wall.region.X; x < wall.region.Right; x++)
+                {
+                    if (wallFound)
+                        break;
+                    for (int y = wall.region.Y; y < wall.region.Bottom; y++)
+                    {
+                        if (wallFound)
+                            break;
+                        int index = MapUtilities.GetWallpaperIndex(map, x, y);
+                        if (index != -1)
+                        {
+                            wallIndex = index;
+                            wallFound = true;
+                        }
+                    }
+                }
+            }
+            bool floorFound = false;
+            foreach (Floor floor in floors)
+            {
+                if (floorFound)
+                    break;
+                for (int x = floor.region.X; x < floor.region.Right; x++)
+                {
+                    if (floorFound)
+                        break;
+                    for (int y = floor.region.Y; y < floor.region.Bottom; y++)
+                    {
+                        if (floorFound)
+                            break;
+                        int index = MapUtilities.GetFloorIndex(map, x, y);
+                        if (index != -1)
+                        {
+                            floorIndex = index;
+                            floorFound = true;
+                        }
+                    }
+                }
+            }
+        }
+
         public void Apply(Map map)
         {
             foreach(Facade wall in walls)

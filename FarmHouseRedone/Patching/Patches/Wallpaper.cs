@@ -15,9 +15,10 @@ namespace FarmHouseRedone.Patching.Patches
         {
             if (who == null)
                 who = Game1.player;
-            if (StatesHandler.decoratableStates.ContainsKey(who.currentLocation))
+            if (StatesHandler.decoratableStates.ContainsKey(location))
             {
                 Point point = new Point(x / 64, y / 64);
+                Logger.Log("Used wallpaper at (" + point.X + ", " + point.Y + ")");
                 DecoratableState state = StatesHandler.GetDecorState(who.currentLocation);
                 if (__instance.isFloor)
                 {
@@ -46,9 +47,20 @@ namespace FarmHouseRedone.Patching.Patches
                     }
                 }
             }
+            else
+            {
+                Logger.Log($"{location} has no DecoratableState!");
+            }
             __result = false;
             return false;
         }
+    }
 
+    class Wallpaper_canBePlacedHere_Patch
+    {
+        public static bool Prefix(ref bool __result)
+        {
+            return true;
+        }
     }
 }

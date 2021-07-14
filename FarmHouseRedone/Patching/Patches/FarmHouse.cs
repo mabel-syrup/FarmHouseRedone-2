@@ -11,17 +11,27 @@ namespace FarmHouseRedone.Patching.Patches
 {
     class FarmHouse_getWalls_Patch
     {
-        internal static void Postfix(ref List<Microsoft.Xna.Framework.Rectangle> __result, FarmHouse __instance)
+        internal static bool Prefix(ref List<Microsoft.Xna.Framework.Rectangle> __result, FarmHouse __instance)
         {
-            
+            List<Rectangle> rects = new List<Rectangle>();
+            States.DecoratableState state = States.StatesHandler.GetDecorState(__instance);
+            foreach(Maps.Room room in state.rooms.Values)
+            {
+                foreach(Maps.Wall wall in room.walls)
+                {
+                    rects.Add(wall.region);
+                }
+            }
+            __result = rects;
+            return false;
         }
     }
 
     class FarmHouse_getFloors_Patch
     {
-        internal static void Postfix(ref List<Microsoft.Xna.Framework.Rectangle> __result, FarmHouse __instance)
+        internal static bool Prefix(ref List<Microsoft.Xna.Framework.Rectangle> __result, FarmHouse __instance)
         {
-
+            return true;
         }
     }
 

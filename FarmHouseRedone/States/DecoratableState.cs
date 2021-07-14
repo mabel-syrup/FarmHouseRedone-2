@@ -96,6 +96,7 @@ namespace FarmHouseRedone.States
             Logger.Log("Found and built " + mapRooms.Count + " rooms:");
             foreach(Room room in mapRooms)
             {
+                room.Init(map);
                 Logger.Log(room.ToString());
             }
             return mapRooms;

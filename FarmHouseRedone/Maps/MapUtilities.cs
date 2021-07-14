@@ -355,6 +355,59 @@ namespace FarmHouseRedone.Maps
             SetMapTileIndexIfOnTileSheet(map, x, y, GetWallIndex(map, x, y, "Front", index), "Front", GetTileSheet(map, "walls_and_floors"), new Rectangle(0, 0, 16, 21));
         }
 
+        public static int GetWallpaperIndex(Map map, int x, int y)
+        {
+            int wallIndex = GetWallSpriteIndex(map, x, y);
+            if (wallIndex == -1)
+                return -1;
+            int wallPaperX = wallIndex % 16;
+            int wallPaperY = wallIndex / 48;
+            int wallPaperIndex = (wallPaperY * 16) + wallPaperX;
+            Logger.Log("Found wallpaper index of " + wallPaperIndex + " for tilesheet index " + wallIndex + ".");
+            return wallPaperIndex;
+        }
+
+        public static int GetWallSpriteIndex(Map map, int x, int y)
+        {
+            int index = -1;
+            if (IsTileOnSheet(map, "Back", x, y, GetTileSheet(map, "walls_and_floors"), new Rectangle(0, 0, 16, 21)))
+            {
+                index = map.GetLayer("Back").Tiles[x, y].TileIndex;
+            }
+            else if (IsTileOnSheet(map, "Buildings", x, y, GetTileSheet(map, "walls_and_floors"), new Rectangle(0, 0, 16, 21)))
+            {
+                index = map.GetLayer("Buildings").Tiles[x, y].TileIndex;
+            }
+            else if (IsTileOnSheet(map, "Front", x, y, GetTileSheet(map, "walls_and_floors"), new Rectangle(0, 0, 16, 21)))
+            {
+                index = map.GetLayer("Front").Tiles[x, y].TileIndex;
+            }
+            return index;
+        }
+
+        public static int GetFloorIndex(Map map, int x, int y)
+        {
+            int floorIndex = GetFloorSpriteIndex(map, x, y);
+            if (floorIndex == -1)
+                return -1;
+            floorIndex -= 336;
+            int floorX = (floorIndex / 2) % 8;
+            int floorY = floorIndex / 32;
+            int floor = (floorY * 8) + floorX;
+            Logger.Log("Found floor index of " + floor + " for tilesheet index " + floorIndex + ".");
+            return floor;
+        }
+
+        public static int GetFloorSpriteIndex(Map map, int x, int y)
+        {
+            int index = -1;
+            if (IsTileOnSheet(map, "Back", x, y, GetTileSheet(map, "walls_and_floors"), new Rectangle(0, 21, 16, 20)))
+            {
+                index = map.GetLayer("Back").Tiles[x, y].TileIndex;
+            }
+            return index;
+        }
+
         internal static int GetWallIndex(Map map, int x, int y, string layer, int destinationIndex)
         {
             if (map.GetLayer(layer).Tiles[x, y] == null)
@@ -363,7 +416,6 @@ namespace FarmHouseRedone.Maps
             int whichHeight = (currentIndex % 48) / 16;
             return destinationIndex + (whichHeight * 16);
         }
-
 
         internal static int getFloorIndex(Map map, int x, int y, string layer, int destinationIndex)
         {

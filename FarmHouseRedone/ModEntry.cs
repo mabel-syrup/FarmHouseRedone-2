@@ -48,7 +48,7 @@ namespace FarmHouseRedone
             );
             harmony.Patch(
                 original: AccessTools.Method(typeof(FarmHouse), nameof(FarmHouse.getWalls)),
-                postfix: new HarmonyMethod(AccessTools.Method(typeof(FarmHouse_getWalls_Patch), nameof(FarmHouse_getWalls_Patch.Postfix)))
+                prefix: new HarmonyMethod(AccessTools.Method(typeof(FarmHouse_getWalls_Patch), nameof(FarmHouse_getWalls_Patch.Prefix)))
             );
             harmony.Patch(
                 original: AccessTools.Method(typeof(DecoratableLocation), nameof(DecoratableLocation.getWalls)),
@@ -73,7 +73,7 @@ namespace FarmHouseRedone
             );
             harmony.Patch(
                 original: AccessTools.Method(typeof(FarmHouse), nameof(FarmHouse.getFloors)),
-                postfix: new HarmonyMethod(AccessTools.Method(typeof(FarmHouse_getFloors_Patch), nameof(FarmHouse_getFloors_Patch.Postfix)))
+                prefix: new HarmonyMethod(AccessTools.Method(typeof(FarmHouse_getFloors_Patch), nameof(FarmHouse_getFloors_Patch.Prefix)))
             );
             harmony.Patch(
                 original: AccessTools.Method(typeof(DecoratableLocation), nameof(DecoratableLocation.getFloors)),

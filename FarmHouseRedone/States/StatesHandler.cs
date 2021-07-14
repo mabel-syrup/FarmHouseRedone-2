@@ -25,7 +25,7 @@ namespace FarmHouseRedone.States
             foreach (GameLocation location in Game1.locations) {
                 if (location is FarmHouse)
                     houseStates[location as FarmHouse] = new FarmHouseState(location as FarmHouse);
-                if (location is DecoratableLocation)
+                if (location.map.Properties.ContainsKey("Walls") || location.map.Properties.ContainsKey("Floors"))
                     decoratableStates[location] = new DecoratableState(location);
             }
         }

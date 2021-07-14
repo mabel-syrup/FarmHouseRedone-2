@@ -725,6 +725,7 @@ namespace FarmHouseRedone.States
                 appliedUpgrades = model.AppliedUpgrades ?? new List<string>();
                 daysUntilUpgrade = model.DaysUntilUpgrade;
                 upgradeID = model.UpgradeID ?? "";
+                Logger.Log(Environment.StackTrace);
                 Logger.Log("Loaded pack FHR Pack: " + packID);
             }
         }
