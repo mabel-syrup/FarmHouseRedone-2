@@ -586,6 +586,8 @@ namespace FarmHouseRedone.States
 
         public List<string> appliedUpgrades;
 
+        public string currentBase;
+
         public FarmHouseState(FarmHouse house)
         {
             offset = Vector2.Zero;
@@ -593,6 +595,7 @@ namespace FarmHouseRedone.States
             location = house;
             packID = "";
             upgradeID = "";
+            currentBase = "";
             daysUntilUpgrade = 0;
             Load();
             mapPath = GetBaseMapPath();
@@ -609,7 +612,7 @@ namespace FarmHouseRedone.States
                 ContentPacks.UpgradeModel model = ContentPacks.PackHandler.GetPackData(packID).GetModel(upgradeID);
                 if (model.IsBase())
                 {
-                    location.upgradeLevel = model.GetBase();
+                    appliedUpgrades.Add(model.ID);
                 }
                 else
                 {
@@ -634,7 +637,7 @@ namespace FarmHouseRedone.States
 
         public void UpdateMap()
         {
-            IContentPack pack = ContentPacks.PackHandler.GetPack(packID);
+            //IContentPack pack = ContentPacks.PackHandler.GetPack(packID);
             foreach (ContentPacks.UpgradeModel model in ContentPacks.PackHandler.GetPackData(packID).Upgrades)
             {
                 if (appliedUpgrades.Contains(model.ID) && !model.IsBase())
@@ -664,15 +667,26 @@ namespace FarmHouseRedone.States
 
         public string GetBaseMapPath()
         {
+            
             try
             {
                 if(packID != "" && packID != "FHRVanillaInternalOnly")
                 {
                     ContentPacks.Pack pack = ContentPacks.PackHandler.GetPackData(packID);
-                    ContentPacks.UpgradeModel model = pack.GetBaseFor(location.upgradeLevel);
-                    if(model != null)
-                        return model.GetMap();
-                    else if(location.mapPath != null)
+                    foreach (ContentPacks.UpgradeModel model in ContentPacks.PackHandler.GetPackData(packID).Upgrades)
+                    {
+                        if (appliedUpgrades.Contains(model.ID) && model.IsBase())
+                        {
+                            if (model.GetBase() >= location.upgradeLevel)
+                            {
+                                Logger.Log("Applying " + model.ID + " as base.");
+                                currentBase = model.ID;
+                                location.upgradeLevel = model.GetBase();
+                                return model.GetMap();
+                            }
+                        }
+                    }
+                    if(location.mapPath != null)
                         return location.mapPath;
                     return "Maps\\FarmHouse";
                 }
@@ -695,12 +709,13 @@ namespace FarmHouseRedone.States
         public void UpdateFromMapPath()
         {
             IContentPack pack = ContentPacks.PackHandler.GetPack(packID);
-            if (pack != null && ContentPacks.PackHandler.GetPackData(packID).GetBaseFor(location.upgradeLevel) != null)
+            if (pack != null && ContentPacks.PackHandler.GetPackData(packID).GetModel(currentBase) != null)
                 location.map = pack.LoadAsset<Map>(mapPath);
             else
                 location.map = Loader.loader.Load<Map>(mapPath, StardewModdingAPI.ContentSource.GameContent);
             location.updateSeasonalTileSheets();
             location.map.LoadTileSheets(StardewValley.Game1.mapDisplayDevice);
+            location.updateMap();
             UpdateMap();
         }
 
@@ -708,6 +723,7 @@ namespace FarmHouseRedone.States
         {
             this.offset += by;
             MapUtilities.OffsetProperties(location.map, (int)by.X, (int)by.Y);
+            location.updateWarps();
         }
 
         public void Load()
@@ -717,7 +733,8 @@ namespace FarmHouseRedone.States
             {
                 Logger.Log("No saved data for " + location.name + location.uniqueName ?? "");
                 Logger.Log("Prompting for pack choice...");
-                StardewValley.Game1.activeClickableMenu = new UI.HouseMenu(GetPackChoice);
+                Delegates.onMenuClosed.Add(PromptForPack);
+                
             }
             else
             {
@@ -728,6 +745,11 @@ namespace FarmHouseRedone.States
                 Logger.Log(Environment.StackTrace);
                 Logger.Log("Loaded pack FHR Pack: " + packID);
             }
+        }
+
+        public void PromptForPack()
+        {
+            StardewValley.Game1.activeClickableMenu = new UI.HouseMenu(GetPackChoice);
         }
 
         public void GetPackChoice(string chosen)
@@ -742,11 +764,13 @@ namespace FarmHouseRedone.States
         public void Save()
         {
 
-            IO.FarmHouseModel model = new IO.FarmHouseModel();
-            model.PackID = packID;
-            model.AppliedUpgrades = appliedUpgrades;
-            model.DaysUntilUpgrade = daysUntilUpgrade;
-            model.UpgradeID = upgradeID;
+            IO.FarmHouseModel model = new IO.FarmHouseModel
+            {
+                PackID = packID,
+                AppliedUpgrades = appliedUpgrades,
+                DaysUntilUpgrade = daysUntilUpgrade,
+                UpgradeID = upgradeID
+            };
             Loader.data.WriteSaveData<IO.FarmHouseModel>("FH-" + location.name + location.uniqueName ?? "", model);
         }
     }

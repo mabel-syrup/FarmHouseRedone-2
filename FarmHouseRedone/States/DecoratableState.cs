@@ -170,15 +170,15 @@ namespace FarmHouseRedone.States
                 Logger.Log("No saved data for " + location.name + location.uniqueName ?? "");
             else
             {
-                foreach(string roomName in model.rooms.Keys)
+                foreach(string roomName in model.Rooms.Keys)
                 {
                     try
                     {
                         Logger.Log("Loading save data for room \"" + roomName + "\"...");
                         if (rooms.ContainsKey(roomName))
                         {
-                            rooms[roomName].SetWall(model.rooms[roomName][0], location.map);
-                            rooms[roomName].SetFloor(model.rooms[roomName][1], location.map);
+                            rooms[roomName].SetWall(model.Rooms[roomName][0], location.map);
+                            rooms[roomName].SetFloor(model.Rooms[roomName][1], location.map);
                         }
                     }
                     catch (Exception e)
@@ -196,7 +196,7 @@ namespace FarmHouseRedone.States
             IO.DecoratableModel model = new IO.DecoratableModel();
             foreach(string room in rooms.Keys)
             {
-                model.rooms.Add(room, new int[2] { rooms[room].wallIndex, rooms[room].floorIndex });
+                model.Rooms.Add(room, new int[2] { rooms[room].wallIndex, rooms[room].floorIndex });
             }
             Loader.data.WriteSaveData<IO.DecoratableModel>(location.name + location.uniqueName ?? "", model);
         }

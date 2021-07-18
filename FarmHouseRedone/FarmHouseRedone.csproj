@@ -58,6 +58,7 @@
     <Compile Include="ContentPacks\Pack.cs" />
     <Compile Include="ContentPacks\PackHandler.cs" />
     <Compile Include="ContentPacks\UpgradeModel.cs" />
+    <Compile Include="Delegates.cs" />
     <Compile Include="IO\DecoratableModel.cs" />
     <Compile Include="IO\FarmHouseModel.cs" />
     <Compile Include="IO\Loader.cs" />
@@ -81,6 +82,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="States\DecoratableState.cs" />
     <Compile Include="States\FarmHouseState.cs" />
+    <Compile Include="States\FarmState.cs" />
     <Compile Include="States\StatesHandler.cs" />
     <Compile Include="States\Upgrade.cs" />
     <Compile Include="UI\Animation.cs" />
@@ -97,6 +99,7 @@
   <ItemGroup>
     <None Include="assets\defaults\names.json" />
     <None Include="assets\defaults\vanilla map walls and floors.json" />
+    <None Include="assets\defaults\vanilla upgrades.json" />
     <None Include="content.json" />
     <None Include="i18n\default.json" />
     <None Include="i18n\fr.json" />

@@ -1,0 +1,42 @@
+﻿[
+  {
+    "ID": "level0",
+    "Name": "Level 0 House",
+    "Description": "This is the standard house.",
+    "Base": "0"
+  },
+  {
+    "ID": "level1",
+    "Name": "Level 1 House",
+    "Description": "I can increase the size of your house and add a kitchen.",
+    "Cost": {
+      "388": 450,
+      "Money": 10000
+    },
+    "Base": "1"
+  },
+  {
+    "ID": "level2",
+    "Name": "Level 2 House",
+    "Description": "I can increase the size of your house and add a nursery.",
+    "Cost": {
+      "709": 150,
+      "Money": 50000
+    },
+    "Base": "2"
+  },
+  {
+    "ID": "level3",
+    "Name": "Cellar",
+    "Description": "I can add a cellar to your house. The cellar can be used to age certain products, like wine and cheese.",
+    "Cost": {
+      "Money": 100000
+    },
+    "Sections": [
+      {
+        "Map": "assets/Cellar.tbin",
+        "Position": "3 22"
+      }
+    ]
+  }
+]

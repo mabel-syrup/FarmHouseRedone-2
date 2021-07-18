@@ -22,7 +22,7 @@ namespace FarmHouseRedone.Maps
             {
                 for (int y = region.Y; y < region.Bottom; y++)
                 {
-                    MapUtilities.setFloorMapTileIndexForAnyLayer(map, x, y, 336 + index % 8 * 2 + index / 8 * 32);
+                    MapUtilities.SetFloorMapTileIndexForAnyLayer(map, x, y, 336 + index % 8 * 2 + index / 8 * 32);
                 }
             }
         }

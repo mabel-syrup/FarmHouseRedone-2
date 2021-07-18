@@ -48,7 +48,7 @@ namespace FarmHouseRedone.UI
 
         public override void receiveLeftClick(int x, int y, bool playSound = true)
         {
-            confirmButton.receiveLeftClick(x, y);
+            confirmButton.ReceiveLeftClick(x, y);
             PackSlot selected = null;
             foreach(PackSlot slot in options)
             {
@@ -102,7 +102,7 @@ namespace FarmHouseRedone.UI
                     DrawEmptySlot(b, i);
                 }
             }
-            confirmButton.draw(b);
+            confirmButton.Draw(b);
             base.draw(b);
             this.drawMouse(b);
         }

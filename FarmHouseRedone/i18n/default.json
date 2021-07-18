@@ -5,5 +5,6 @@
   "dayPlural": "days",
   "daySingular": "day",
   "houseUpgradeDialogue": "Oh you want me to work on your house?  Sure, I have some ideas written down right here!",
-  "houseUpgradeDialogue_noUpgrades" :  "Sorry, {0}! I just can't think of anything more I can add to your house!$s"
+  "houseUpgradeDialogue_noUpgrades": "Sorry, {0}! I just can't think of anything more I can add to your house!$s",
+  "houseUpgradeNotEnough" :  "Sorry, it looks like you don't have enough materials...$s'"
 }

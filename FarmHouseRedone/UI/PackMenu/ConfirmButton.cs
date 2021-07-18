@@ -27,14 +27,14 @@ namespace FarmHouseRedone.UI
             this.bounds = new Rectangle(x, y, 128, 128);
         }
 
-        public void receiveLeftClick(int x, int y)
+        public void ReceiveLeftClick(int x, int y)
         {
             if (!this.bounds.Contains(x, y) || this.action == null || disabled)
                 return;
             this.action();
         }
 
-        public void draw(SpriteBatch b)
+        public void Draw(SpriteBatch b)
         {
             //128 256 64 64
             b.Draw(Game1.mouseCursors, new Vector2(bounds.X, bounds.Y), new Rectangle(128, 256, 64, 64), disabled ? disabledTint : Color.White);

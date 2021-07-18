@@ -52,10 +52,10 @@ namespace FarmHouseRedone.Maps
             anchorY = 0;
         }
 
-        public void Paste(ref Vector2 offset, Map houseMap, int pasteX, int pasteY)
+        public void Paste(ref Vector2 offset, Map destMap, int pasteX, int pasteY)
         {
-            Dictionary<TileSheet, TileSheet> equivalentSheets = MapUtilities.GetEquivalentSheets(houseMap, map, true);
-            houseMap.LoadTileSheets(Game1.mapDisplayDevice);
+            Dictionary<TileSheet, TileSheet> equivalentSheets = MapUtilities.GetEquivalentSheets(destMap, map, true);
+            destMap.LoadTileSheets(Game1.mapDisplayDevice);
             //This gets us the paste bounds as relative to the existing map.  A negative x would mean to the left of 0.
             Rectangle pasteBounds = GetPasteBounds(pasteX, pasteY);
 
@@ -64,11 +64,11 @@ namespace FarmHouseRedone.Maps
             Vector2 adjustment = new Vector2(-Math.Min(0, pasteBounds.X), -Math.Min(0, pasteBounds.Y));
 
             //Resize the map such that there is enough room to paste the map section.  
-            MapUtilities.ResizeMapAtLeast(houseMap, pasteBounds.Width, pasteBounds.Height, (int)adjustment.X, (int)adjustment.Y);
+            MapUtilities.ResizeMapAtLeast(destMap, pasteBounds.Width, pasteBounds.Height, (int)adjustment.X, (int)adjustment.Y);
 
             //Get the actual sizes of the two maps.  The host map has been resized already.
             Vector2 mapSize = MapUtilities.GetMapSize(map);
-            Vector2 hostMapSize = MapUtilities.GetMapSize(houseMap);
+            Vector2 hostMapSize = MapUtilities.GetMapSize(destMap);
 
             for (int x = 0; x < mapSize.X && pasteX + x + adjustment.X - anchorX < hostMapSize.X; x++)
             {
@@ -76,7 +76,7 @@ namespace FarmHouseRedone.Maps
                 for (int y = 0; y < mapSize.Y && pasteY + y + adjustment.Y - anchorY < hostMapSize.Y; y++)
                 {
                     int destY = pasteY + y + (int)adjustment.Y - anchorY;
-                    MapUtilities.PasteTile(houseMap, map, x, y, destX, destY, equivalentSheets, 2);
+                    MapUtilities.PasteTile(destMap, map, x, y, destX, destY, equivalentSheets, 2);
                 }
             }
             MapUtilities.OffsetProperties(map, pasteX - anchorX, pasteY - anchorY);
@@ -84,7 +84,7 @@ namespace FarmHouseRedone.Maps
             {
                 if (pair.Key == "Anchor")
                     continue;
-                MapUtilities.MergeProperties(houseMap, pair.Key, pair.Value.ToString());
+                MapUtilities.MergeProperties(destMap, pair.Key, pair.Value.ToString());
             }
             offset += adjustment;
         }
@@ -125,7 +125,7 @@ namespace FarmHouseRedone.Maps
                 for (int y = 0; y < mapSize.Y && pasteY + y + adjustment.Y - anchorY < hostMapSize.Y; y++)
                 {
                     int destY = pasteY + y + (int)adjustment.Y - anchorY;
-                    MapUtilities.PasteTile(destination.map, map, x, y, destX, destY, equivalentSheets, 2);
+                    MapUtilities.PasteTile(destination.map, map, x, y, destX, destY, equivalentSheets, 3);
                 }
             }
             MapUtilities.OffsetProperties(map, pasteX - anchorX, pasteY - anchorY);

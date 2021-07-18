@@ -39,7 +39,7 @@ namespace FarmHouseRedone.Patching.Patches
     {
         internal static bool Prefix(int level, FarmHouse __instance)
         {
-            return true;
+            return false;
         }
     }
 }

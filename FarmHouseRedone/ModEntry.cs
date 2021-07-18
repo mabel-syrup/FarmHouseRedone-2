@@ -10,6 +10,7 @@ using StardewValley.Locations;
 using FarmHouseRedone.Patching.Patches;
 using FarmHouseRedone.States;
 using Microsoft.Xna.Framework.Graphics;
+using StardewModdingAPI.Events;
 
 namespace FarmHouseRedone
 {
@@ -103,6 +104,18 @@ namespace FarmHouseRedone
             helper.Events.GameLoop.DayStarted += GameLoop_DayStarted;
             helper.Events.GameLoop.DayEnding += GameLoop_DayEnding;
             helper.Events.Input.ButtonPressed += Input_ButtonPressed;
+            helper.Events.Display.MenuChanged += Display_MenuChanged;
+            helper.Events.GameLoop.SaveCreated += GameLoop_SaveCreated;
+        }
+
+        private void GameLoop_SaveCreated(object sender, SaveCreatedEventArgs e)
+        {
+            
+        }
+
+        private void Display_MenuChanged(object sender, MenuChangedEventArgs e)
+        {
+            Delegates.MenuChanged(e.NewMenu);
         }
 
         private void GameLoop_DayEnding(object sender, StardewModdingAPI.Events.DayEndingEventArgs e)
@@ -119,6 +132,8 @@ namespace FarmHouseRedone
             {
                 state.DayStarted();
             }
+            if (Game1.activeClickableMenu == null)
+                Delegates.MenuChanged(null);
         }
 
         private void Input_ButtonPressed(object sender, StardewModdingAPI.Events.ButtonPressedEventArgs e)
@@ -131,7 +146,7 @@ namespace FarmHouseRedone
             }
         }
 
-        private void dummyRecipient(string pack)
+        private void DummyRecipient(string pack)
         {
             Logger.Log("Chose pack " + pack);
         }

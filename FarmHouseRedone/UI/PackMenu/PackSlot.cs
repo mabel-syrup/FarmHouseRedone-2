@@ -8,6 +8,7 @@ using StardewValley;
 using StardewValley.Menus;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using FarmHouseRedone.ContentPacks;
 
 namespace FarmHouseRedone.UI
 {
@@ -18,6 +19,13 @@ namespace FarmHouseRedone.UI
         public Rectangle bounds;
         Texture2D packIcon;
 
+        private int level0;
+        private int level1;
+        private int level2;
+        private int leveln;
+        private int maxLevel;
+        private int upgrades;
+
         public PackSlot(IContentPack pack, int x, int y)
         {
             bounds = new Rectangle(x, y, 900, 150);
@@ -26,6 +34,52 @@ namespace FarmHouseRedone.UI
                 packIcon = pack.LoadAsset<Texture2D>("icon.png");
             else
                 packIcon = Loader.loader.Load<Texture2D>("assets/Pack_Icon.png", ContentSource.ModFolder);
+            Pack packData = PackHandler.GetPackData(pack.Manifest.UniqueID);
+            maxLevel = 2;
+            foreach(UpgradeModel model in packData.Upgrades)
+            {
+                if (model.IsBase())
+                {
+                    int modelBase = model.GetBase();
+                    switch (modelBase)
+                    {
+                        case 0:
+                            level0++;
+                            break;
+                        case 1:
+                            level1++;
+                            break;
+                        case 2:
+                            level2++;
+                            break;
+                        default:
+                            leveln++;
+                            maxLevel = Math.Max(leveln, modelBase);
+                            break;
+                    }
+                }
+                else
+                {
+                    upgrades++;
+                }
+            }
+            level0 = cleanupInt(level0);
+            level1 = cleanupInt(level1);
+            level2 = cleanupInt(level2);
+            leveln = cleanupInt(leveln);
+            maxLevel = cleanupInt(maxLevel); 
+            upgrades = cleanupInt(upgrades);
+            /*level0 = 99;
+            level1 = 99;
+            level2 = 99;
+            leveln = 99;
+            maxLevel = 99;
+            upgrades = 99;*/
+        }
+
+        private int cleanupInt(int cleanup)
+        {
+            return Math.Min(99, cleanup);
         }
 
         public bool receiveLeftClick(int x, int y)
@@ -41,6 +95,7 @@ namespace FarmHouseRedone.UI
             drawPackName(b);
             drawIconBackground(b);
             drawPackIcon(b);
+            DrawPackFeatures(b);
         }
 
         protected void drawPackName(SpriteBatch b)
@@ -105,5 +160,25 @@ namespace FarmHouseRedone.UI
                 2f,
                 false
         );
+
+        protected void DrawPackFeatures(SpriteBatch b)
+        {
+            drawLevelIcon(b, 0, 0, level0);
+            drawLevelIcon(b, 32 + 16, 16, level1);
+            drawLevelIcon(b, 64 + 32, 32, level2);
+            drawLevelIcon(b, 96 + 48, 48, leveln);
+            if(leveln > 0)
+                Utility.drawTinyDigits(maxLevel, b, new Vector2(bounds.X + 128 + 36 + 96 + 48 + 28, bounds.Bottom - 36), 2f, 1f, Color.White);
+            drawLevelIcon(b, 128 + 64, 64, upgrades);
+        }
+
+        protected void drawLevelIcon(SpriteBatch b, int xOffset, int spriteOffset, int level)
+        {
+            float scaleSize = 1f;
+            Vector2 location = new Vector2(bounds.X + 128 + 36 + xOffset, bounds.Bottom - 36);
+            b.Draw(Loader.spriteSheet, location, new Rectangle(0 + spriteOffset, 143 + (level > 0 ? 0 : 16), 16, 16), Color.White, 0f, Vector2.Zero, 2f, SpriteEffects.None, 1f);
+            if(level > 1)
+                Utility.drawTinyDigits(level, b, location + new Vector2(28, 16), 2f * scaleSize, 1f, Color.White);
+        }
     }
 }

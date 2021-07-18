@@ -8,11 +8,11 @@ namespace FarmHouseRedone.IO
 {
     public class DecoratableModel
     {
-        public Dictionary<string, int[]> rooms { get; set; }
+        public Dictionary<string, int[]> Rooms { get; set; }
 
         public DecoratableModel()
         {
-            rooms = new Dictionary<string, int[]>();
+            Rooms = new Dictionary<string, int[]>();
         }
     }
 }

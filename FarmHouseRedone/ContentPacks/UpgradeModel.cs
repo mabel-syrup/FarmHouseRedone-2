@@ -22,7 +22,7 @@ namespace FarmHouseRedone.ContentPacks
         public Dictionary<string,int> Cost { get; set; }
         public string Days { get; set; }
         public List<SectionModel> Sections { get; set; }
-        public string Requirements { get; set; }
+        public List<string> Requirements { get; set; }
 
         public string GetMap(int index = 0)
         {
@@ -62,6 +62,13 @@ namespace FarmHouseRedone.ContentPacks
             if (Cost == null || !Cost.ContainsKey("Money"))
                 return 0;
             return Cost["Money"];
+        }
+
+        public List<string> GetRequirements()
+        {
+            if (Requirements == null)
+                return new List<string>();
+            return Requirements;
         }
 
         public Dictionary<StardewValley.Object, int> GetMaterials()
@@ -139,6 +146,11 @@ namespace FarmHouseRedone.ContentPacks
                 Logger.Log($"The value for \"Base\" in {GetName()} was not in the correct format!  Base needs to represent a numeric value.  Given {Base}");
                 return 3;
             }
+        }
+
+        public override string ToString()
+        {
+            return ID;
         }
     }
 

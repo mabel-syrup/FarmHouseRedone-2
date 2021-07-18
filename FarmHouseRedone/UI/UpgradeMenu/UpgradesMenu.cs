@@ -41,15 +41,21 @@ namespace FarmHouseRedone.UI
             Dictionary<string, List<string>> names = Loader.loader.Load<Dictionary<string, List<string>>>("assets/defaults/names.json", ContentSource.ModFolder);
             nouns = names["Noun"];
             adjectives = names["Adjective"];
-            for(int i = 11; i >= 0; i--)
+            ContentPacks.Pack pack = ContentPacks.PackHandler.GetPackData(state.packID);
+
+            List<ContentPacks.UpgradeModel> models = ContentPacks.PackHandler.GetPackData(state.packID).GetAvailableModels(state);
+
+            for (int i = 11; i >= 0; i--)
             {
                 ContentPacks.UpgradeModel model = null;
-                if (i < ContentPacks.PackHandler.GetPackData(state.packID).Upgrades.Length)
-                    model = ContentPacks.PackHandler.GetPackData(state.packID).Upgrades[i];
+                if (i < models.Count)
+                    model = models[i];
                 else
                 {
-                    model = new ContentPacks.UpgradeModel();
-                    model.Name = adjectives[Game1.random.Next(adjectives.Count - 1)] + " " + nouns[Game1.random.Next(nouns.Count - 1)];
+                    model = new ContentPacks.UpgradeModel
+                    {
+                        Name = adjectives[Game1.random.Next(adjectives.Count - 1)] + " " + nouns[Game1.random.Next(nouns.Count - 1)]
+                    };
                 }
                 items.Add(new UpgradeMenuItem(state.packID, model, (Game1.viewport.Width/2 - 600) + (i % 2) * 600, bounds.Y + yMargin/2 + ((11 - i)/2) * 100, i >=10, SelectionMade));
             }
@@ -116,19 +122,50 @@ namespace FarmHouseRedone.UI
             Logger.Log(who.name + " chose " + which);
             if (which.Equals("Yes"))
             {
-                state.SetCurrentUpgrade(selectedModel.ID, selectedModel.GetDays());
-                string confirmDialogue = Translation.Translate("upgradeConfirm", selectedModel.GetDays(), selectedModel.GetDays() == 1 ? Translation.Translate("daySingular") : Translation.Translate("dayPlural"));
-                Game1.drawDialogue(Game1.getCharacterFromName("Robin"), confirmDialogue);
+                bool hasMaterials = true;
+                Dictionary<StardewValley.Object, int> materials = selectedModel.GetMaterials();
+                foreach(StardewValley.Object material in materials.Keys)
+                {
+                    if (!Game1.player.hasItemInInventory(material.parentSheetIndex, materials[material]))
+                        hasMaterials = false;
+                }
+                if (who.Money >= selectedModel.GetPrice() && hasMaterials)
+                {
+                    who.Money -= selectedModel.GetPrice();
+                    foreach (StardewValley.Object material in materials.Keys)
+                    {
+                        who.removeItemsFromInventory(material.parentSheetIndex, materials[material]);
+                    }
+                    state.SetCurrentUpgrade(selectedModel.ID, selectedModel.GetDays());
+                    string confirmDialogue = Translation.Translate("upgradeConfirm", selectedModel.GetDays(), selectedModel.GetDays() == 1 ? Translation.Translate("daySingular") : Translation.Translate("dayPlural"));
+                    Game1.drawDialogue(Game1.getCharacterFromName("Robin"), confirmDialogue);
+                }
+                else
+                {
+                    if (who.Money < selectedModel.GetPrice())
+                        Game1.drawObjectDialogue(Game1.content.LoadString("Strings\\UI:NotEnoughMoney3"));
+                    else
+                    {
+                        string notEnough = Translation.Translate("houseUpgradeNotEnough");
+                        Game1.drawDialogue(Game1.getCharacterFromName("Robin"), notEnough);
+                    }
+                    Game1.afterDialogues += new Game1.afterFadeFunction(ReturnToThisMenu);
+                }
             }
             else
             {
-                selectedModel = null;
-                foreach(UpgradeMenuItem item in items)
-                {
-                    item.isSelected = false;
-                }
-                Game1.activeClickableMenu = this;
+                ReturnToThisMenu();
             }
+        }
+
+        public void ReturnToThisMenu()
+        {
+            selectedModel = null;
+            foreach (UpgradeMenuItem item in items)
+            {
+                item.isSelected = false;
+            }
+            Game1.activeClickableMenu = this;
         }
 
         public override void performHoverAction(int x, int y)

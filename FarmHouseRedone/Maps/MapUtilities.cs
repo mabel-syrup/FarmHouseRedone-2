@@ -17,6 +17,7 @@ namespace FarmHouseRedone.Maps
         public const int PASTE_DESTRUCTIVE = 0;
         public const int PASTE_NONDESTRUCTIVE = 1;
         public const int PASTE_PRESERVE_FLOORS = 2;
+        public const int PASTE_REPLACE_FLOORS = 3;
 
         public static Vector2 GetMapSize(Map map)
         {
@@ -25,13 +26,13 @@ namespace FarmHouseRedone.Maps
 
         public static void PasteTile(Map map, Map sectionMap, int x, int y, int mapX, int mapY, Dictionary<TileSheet, TileSheet> equivalentSheets, int pasteMode = PASTE_NONDESTRUCTIVE)
         {
-            PasteTileInLayer(map, sectionMap, x, y, mapX, mapY, "Back", equivalentSheets, pasteMode == 0);
-            PasteTileInLayer(map, sectionMap, x, y, mapX, mapY, "Buildings", equivalentSheets, pasteMode == 0 || pasteMode == 2);
-            PasteTileInLayer(map, sectionMap, x, y, mapX, mapY, "Front", equivalentSheets, pasteMode == 0 || pasteMode == 2);
-            PasteTileInLayer(map, sectionMap, x, y, mapX, mapY, "AlwaysFront", equivalentSheets, pasteMode == 0 || pasteMode == 2);
+            PasteTileInLayer(map, sectionMap, x, y, mapX, mapY, "Back", equivalentSheets, pasteMode);
+            PasteTileInLayer(map, sectionMap, x, y, mapX, mapY, "Buildings", equivalentSheets, pasteMode);
+            PasteTileInLayer(map, sectionMap, x, y, mapX, mapY, "Front", equivalentSheets, pasteMode);
+            PasteTileInLayer(map, sectionMap, x, y, mapX, mapY, "AlwaysFront", equivalentSheets, pasteMode);
         }
 
-        public static void PasteTileInLayer(Map map, Map sectionMap, int x, int y, int mapX, int mapY, string layer, Dictionary<TileSheet, TileSheet> equivalentSheets, bool destructive)
+        public static void PasteTileInLayer(Map map, Map sectionMap, int x, int y, int mapX, int mapY, string layer, Dictionary<TileSheet, TileSheet> equivalentSheets, int pasteMode)
         {
             if (sectionMap.GetLayer(layer) == null)
                 return;
@@ -40,22 +41,29 @@ namespace FarmHouseRedone.Maps
             if (sectionMap.GetLayer(layer).Tiles[x, y] != null)
             {
                 Tile sectionTile = sectionMap.GetLayer(layer).Tiles[x, y];
-                if (sectionTile is AnimatedTile)
+                if (layer == "Back" && pasteMode == PASTE_PRESERVE_FLOORS && map.GetLayer(layer).Tiles[mapX, mapY] != null)
                 {
-                    int framesCount = (sectionTile as AnimatedTile).TileFrames.Length;
-                    StaticTile[] frames = new StaticTile[framesCount];
-                    for (int i = 0; i < framesCount; i++)
+
+                }
+                else 
+                { 
+                    if (sectionTile is AnimatedTile)
                     {
-                        StaticTile frame = (sectionTile as AnimatedTile).TileFrames[i];
-                        frames[i] = new StaticTile(map.GetLayer(layer), equivalentSheets[sectionTile.TileSheet], frame.BlendMode, frame.TileIndex);
+                        int framesCount = (sectionTile as AnimatedTile).TileFrames.Length;
+                        StaticTile[] frames = new StaticTile[framesCount];
+                        for (int i = 0; i < framesCount; i++)
+                        {
+                            StaticTile frame = (sectionTile as AnimatedTile).TileFrames[i];
+                            frames[i] = new StaticTile(map.GetLayer(layer), equivalentSheets[sectionTile.TileSheet], frame.BlendMode, frame.TileIndex);
+                        }
+                        map.GetLayer(layer).Tiles[mapX, mapY] = new AnimatedTile(map.GetLayer(layer), frames, (sectionTile as AnimatedTile).FrameInterval);
                     }
-                    map.GetLayer(layer).Tiles[mapX, mapY] = new AnimatedTile(map.GetLayer(layer), frames, (sectionTile as AnimatedTile).FrameInterval);
+                    else
+                    {
+                        map.GetLayer(layer).Tiles[mapX, mapY] = new StaticTile(map.GetLayer(layer), equivalentSheets[sectionTile.TileSheet], sectionTile.BlendMode, sectionTile.TileIndex);
+                    }
                 }
-                else
-                {
-                    map.GetLayer(layer).Tiles[mapX, mapY] = new StaticTile(map.GetLayer(layer), equivalentSheets[sectionTile.TileSheet], sectionTile.BlendMode, sectionTile.TileIndex);
-                }
-                if (sectionTile.Properties.Keys.Count > 0)
+                if (sectionTile != null && sectionTile.Properties.Keys.Count > 0 && map.GetLayer(layer).Tiles[mapX, mapY] != null)
                 {
                     foreach (KeyValuePair<string, PropertyValue> pair in sectionTile.Properties)
                     {
@@ -63,7 +71,7 @@ namespace FarmHouseRedone.Maps
                     }
                 }
             }
-            else if (destructive)
+            else if (pasteMode == PASTE_DESTRUCTIVE || (layer != "Back" && pasteMode == PASTE_PRESERVE_FLOORS) || (layer != "Back" && pasteMode == PASTE_REPLACE_FLOORS))
             {
                 map.GetLayer(layer).Tiles[mapX, mapY] = null;
             }
@@ -149,6 +157,38 @@ namespace FarmHouseRedone.Maps
                                 wallStringAttempt += original[i + j] + " ";
                             }
                             Logger.Log(string.Format("Invalid definition!  Walls and Floors must be defined as [x y width height room].  The invalid wall definition was {0}\nThe invalid wall was skipped.", wallStringAttempt), StardewModdingAPI.LogLevel.Warn);
+                        }
+                    }
+                    updatedProperties[name] = Strings.Cleanup(adjusted);
+                }
+                if(name == "Warp")
+                {
+                    string adjusted = "";
+                    string[] original = Strings.Cleanup(property.Value.ToString()).Split(' ');
+                    for(int i = 0; i < original.Length; i += 5)
+                    {
+                        try
+                        {
+                            adjusted += $"{Convert.ToInt32(original[i]) + xOffset} {Convert.ToInt32(original[i + 1]) + yOffset} {original[i + 2]} {original[i + 3]} {original[i + 4]} ";
+                        }
+                        catch (IndexOutOfRangeException)
+                        {
+                            string warpStringAttempt = "";
+                            while (i < original.Length)
+                            {
+                                warpStringAttempt += original[i] + " ";
+                                i++;
+                            }
+                            Logger.Log(string.Format("Incomplete definition!  Warps must be defined as [x y Destination x y].  There were insufficient values for the warp {0}", warpStringAttempt), StardewModdingAPI.LogLevel.Warn);
+                        }
+                        catch (FormatException)
+                        {
+                            string warpStringAttempt = "";
+                            for (int j = 0; j < 5; j++)
+                            {
+                                warpStringAttempt += original[i + j] + " ";
+                            }
+                            Logger.Log(string.Format("Invalid definition!  Warps must be defined as [x y Destination x y].  There were invalid values for the warp {0}\nThis warp was skipped.", warpStringAttempt), StardewModdingAPI.LogLevel.Warn);
                         }
                     }
                     updatedProperties[name] = Strings.Cleanup(adjusted);
@@ -417,7 +457,7 @@ namespace FarmHouseRedone.Maps
             return destinationIndex + (whichHeight * 16);
         }
 
-        internal static int getFloorIndex(Map map, int x, int y, string layer, int destinationIndex)
+        internal static int GetFloorIndex(Map map, int x, int y, string layer, int destinationIndex)
         {
             if (map.GetLayer(layer).Tiles[x, y] == null)
                 return -1;
@@ -434,11 +474,11 @@ namespace FarmHouseRedone.Maps
             //return destinationIndex + (whichHeight * 16);
         }
 
-        internal static void setFloorMapTileIndexForAnyLayer(Map map, int x, int y, int index)
+        internal static void SetFloorMapTileIndexForAnyLayer(Map map, int x, int y, int index)
         {
-            SetMapTileIndexIfOnTileSheet(map, x, y, getFloorIndex(map, x, y, "Back", index), "Back", GetTileSheet(map, "walls_and_floors"), new Rectangle(0, 21, 16, 10));
-            SetMapTileIndexIfOnTileSheet(map, x, y, getFloorIndex(map, x, y, "Buildings", index), "Buildings", GetTileSheet(map, "walls_and_floors"), new Rectangle(0, 21, 16, 10));
-            SetMapTileIndexIfOnTileSheet(map, x, y, getFloorIndex(map, x, y, "Front", index), "Front", GetTileSheet(map, "walls_and_floors"), new Rectangle(0, 21, 16, 10));
+            SetMapTileIndexIfOnTileSheet(map, x, y, GetFloorIndex(map, x, y, "Back", index), "Back", GetTileSheet(map, "walls_and_floors"), new Rectangle(0, 21, 16, 10));
+            SetMapTileIndexIfOnTileSheet(map, x, y, GetFloorIndex(map, x, y, "Buildings", index), "Buildings", GetTileSheet(map, "walls_and_floors"), new Rectangle(0, 21, 16, 10));
+            SetMapTileIndexIfOnTileSheet(map, x, y, GetFloorIndex(map, x, y, "Front", index), "Front", GetTileSheet(map, "walls_and_floors"), new Rectangle(0, 21, 16, 10));
         }
 
         internal static void ResizeMapAtLeast(Map map, int width, int height, int xOffset, int yOffset)
