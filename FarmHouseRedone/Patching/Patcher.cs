@@ -5,13 +5,13 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Reflection;
 using StardewModdingAPI;
-using Harmony;
+using HarmonyLib;
 
 namespace FarmHouseRedone
 {
     public static class Patcher
     {
-        public static HarmonyInstance harmony = HarmonyInstance.Create("mabelsyrup.farmhouse");
+        public static Harmony harmony = new Harmony("mabelsyrup.farmhouse");
         public static IReflectionHelper reflector;
     }
 }

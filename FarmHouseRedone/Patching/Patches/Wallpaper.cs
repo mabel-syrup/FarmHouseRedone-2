@@ -37,7 +37,7 @@ namespace FarmHouseRedone.Patching.Patches
                 {
                     foreach(Maps.Room room in state.rooms.Values)
                     {
-                        if (room.PointWithinWall(point))
+                        if (room.PointWithinWall(point, location.map))
                         {
                             room.SetWall(__instance.parentSheetIndex, location.map);
                             location.playSound("coin");

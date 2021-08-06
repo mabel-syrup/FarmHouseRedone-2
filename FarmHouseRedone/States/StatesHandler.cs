@@ -15,6 +15,8 @@ namespace FarmHouseRedone.States
         public static Dictionary<GameLocation, DecoratableState> decoratableStates;
         public static bool initialized = false;
 
+        public static Config config;
+
         //This method is intended to be run only on startup.  FHR does not store data within the core of Stardew Valley, allowing it to be installed and uninstalled freely.
         //Each time it is run, it is essentially run for the first time.
         public static void Init()

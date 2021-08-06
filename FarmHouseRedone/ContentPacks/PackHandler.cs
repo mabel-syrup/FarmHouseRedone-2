@@ -53,6 +53,7 @@ namespace FarmHouseRedone.ContentPacks
             "IF",
             "*/",
             "+-",
+            "NOT!",
             "<=>=!=~==",
             "&&||ANDOR"
         };
@@ -113,12 +114,9 @@ namespace FarmHouseRedone.ContentPacks
 
         public static bool CompareToRequirements(States.FarmHouseState state, UpgradeModel model)
         {
-            List<string> requirements = model.GetRequirements();
-            foreach(string requirement in requirements)
-            {
-                if (!Compare(requirement, state, model))
-                    return false;
-            }
+            string requirement = model.GetRequirements();
+            if (requirement != "" && !Compare(requirement, state, model))
+                return false;
             return true;
         }
 
@@ -143,7 +141,8 @@ namespace FarmHouseRedone.ContentPacks
                         return state.appliedUpgrades.Count;
                     case "hasupgrade":
                         return state.appliedUpgrades.Contains(args[0]);
-
+                    case "hasgroup":
+                        return state.HasUpgradeGroup(args[0].ToString());
                     //Global stuff
                     case "day":
                         return Game1.dayOfMonth;
@@ -258,16 +257,6 @@ namespace FarmHouseRedone.ContentPacks
                         {
                             if (Game1.player.friendshipData.TryGetValue(character.name, out Friendship friendship))
                             {
-                                /*if (friendship.IsDivorced())
-                                    return "Divorced";
-                                if (friendship.IsMarried())
-                                    return "Married";
-                                if (friendship.IsRoommate())
-                                    return "Roommate";
-                                if (friendship.IsEngaged())
-                                    return "Engaged";
-                                if (friendship.IsDating())
-                                    return "Dating";*/
                                 return friendship.Status.ToString();
                             }
                         }
@@ -392,9 +381,9 @@ namespace FarmHouseRedone.ContentPacks
         {
             if(parts.Count == 1)
             {
+                Logger.Log("Final value: " + parts[0].ToString());
                 return parts[0];
-                /*Logger.Log("Final value: " + parts[0].ToString());
-                try
+                /*try
                 {
                     return Convert.ToBoolean(parts[0]);
                 }
@@ -420,7 +409,7 @@ namespace FarmHouseRedone.ContentPacks
                 {
                     if (parts[i] is string && opOrder[layer].Contains(parts[i] as string))
                     {
-                        if (parts[i] as string == "IF")
+                        if (parts[i] as string == "IF" || parts[i] as string == "NOT" || parts[i] as string == "!")
                             indexToReplaceAt = i;
                         else
                             indexToReplaceAt = i - 1;
@@ -437,15 +426,31 @@ namespace FarmHouseRedone.ContentPacks
             {
                 if (i == indexToReplaceAt)
                 {
-                    if (parts[i] is string && parts[i] as string == "IF")
+                    bool handled = false;
+                    if(parts[i] is string)
                     {
-                        if (Convert.ToBoolean(parts[i + 1]))
-                            outObjects.Add(parts[i + 2]);
-                        else
-                            outObjects.Add(parts[i + 3]);
-                        i += 3;
+                        string op = parts[i] as string;
+                        switch (op)
+                        {
+                            case "IF":
+                            case "if":
+                                if (Convert.ToBoolean(parts[i + 1]))
+                                    outObjects.Add(parts[i + 2]);
+                                else
+                                    outObjects.Add(parts[i + 3]);
+                                i += 3;
+                                handled = true;
+                                break;
+                            case "NOT":
+                            case "not":
+                            case "!":
+                                outObjects.Add(!Convert.ToBoolean(parts[i + 1]));
+                                i++;
+                                handled = true;
+                                break;
+                        }
                     }
-                    else
+                    if(!handled)
                     {
                         outObjects.Add(Operate(parts[i], parts[i + 1].ToString(), parts[i + 2]));
                         i += 2;
@@ -466,6 +471,14 @@ namespace FarmHouseRedone.ContentPacks
         public static List<object> ParseOperation(string operation, States.FarmHouseState state, UpgradeModel model)
         {
             Logger.Log("Parsing\n" + operation);
+
+            MatchCollection stringLiterals = Regex.Matches(operation, @"'.*'");
+            foreach(Match literal in stringLiterals)
+            {
+                string stringLiteral = literal.Captures[0].Value;
+                string replacementString = "[LITERAL]" + stringLiteral.Substring(1, stringLiteral.Length - 2).Replace(" ", "[SPACE]");
+                operation = operation.Replace(stringLiteral, replacementString);
+            }
 
             MatchCollection brackets = Regex.Matches(operation, @"\(.*\)");
             foreach(Match bracket in brackets)
@@ -495,6 +508,10 @@ namespace FarmHouseRedone.ContentPacks
             {
                 if (parsedTokens.ContainsKey(part))
                     parts.Add(parsedTokens[part]);
+                else if (part.StartsWith("[LITERAL]"))
+                {
+                    parts.Add(part.Substring(9, part.Length - 9).Replace("[SPACE]", " "));
+                }
                 else
                     parts.Add(part);
             }

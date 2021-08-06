@@ -6,8 +6,9 @@ using System.Threading.Tasks;
 
 namespace FarmHouseRedone
 {
-    class Config
+    public class Config
     {
         public bool debug = true;
+        public bool immediately_apply_upgrades = true;
     }
 }

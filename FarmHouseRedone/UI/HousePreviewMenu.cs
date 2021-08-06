@@ -73,7 +73,7 @@ namespace FarmHouseRedone.UI
             this.exitFunction = OnClose;
         }
 
-        private void ApplyUpgrade(UpgradeModel upgradeModel = null)
+        /*private void ApplyUpgrade(UpgradeModel upgradeModel = null)
         {
             if (upgradeModel == null)
                 upgradeModel = model;
@@ -83,7 +83,7 @@ namespace FarmHouseRedone.UI
             MapSection upgrade = new MapSection(upgradeModel.ID, upgradeMap);
             Vector2 position = upgradeModel.ConvertPosition(offset, location.map);
             upgrade.Paste(ref offset, location.map, (int)position.X, (int)position.Y);
-        }
+        }*/
 
         public override void receiveLeftClick(int x, int y, bool playSound = true)
         {

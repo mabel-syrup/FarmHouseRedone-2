@@ -82,5 +82,15 @@ namespace FarmHouseRedone
             }
             return outString;
         }
+
+        public static string ListToString<T>(List<T> toString)
+        {
+            string outString = "";
+            foreach(object obj in toString)
+            {
+                outString += obj.ToString() + " ";
+            }
+            return outString.TrimEnd(' ');
+        }
     }
 }

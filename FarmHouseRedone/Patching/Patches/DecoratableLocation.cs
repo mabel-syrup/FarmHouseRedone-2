@@ -89,4 +89,19 @@ namespace FarmHouseRedone.Patching.Patches
 
         }
     }
+
+    class DecoratableLocation_isTileOnWall_Patch
+    {
+        public static bool Prefix(ref bool __result, int x, int y, DecoratableLocation __instance)
+        {
+            States.DecoratableState decoratableState = States.StatesHandler.GetDecorState(__instance);
+            foreach(Maps.Room room in decoratableState.rooms.Values)
+            {
+                if (room.PointWithinWall(new Point(x, y), __instance.map))
+                    __result = true;
+            }
+            __result = false;
+            return false;
+        }
+    }
 }

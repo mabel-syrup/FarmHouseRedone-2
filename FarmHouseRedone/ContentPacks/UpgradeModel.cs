@@ -14,15 +14,18 @@ namespace FarmHouseRedone.ContentPacks
     public class UpgradeModel
     {
         public string ID { get; set; }
+        public string Group { get; set; }
         public string Name { get; set; }
         public string Base { get; set; }
         public string Map { get; set; }
         public string Position { get; set; }
         public string Description { get; set; }
-        public Dictionary<string,int> Cost { get; set; }
+        public Dictionary<string,string> Cost { get; set; }
         public string Days { get; set; }
         public List<SectionModel> Sections { get; set; }
-        public List<string> Requirements { get; set; }
+        public string Requirements { get; set; }
+        public string Entry { get; set; }
+        public List<string> With { get; set; }
 
         public string GetMap(int index = 0)
         {
@@ -37,37 +40,83 @@ namespace FarmHouseRedone.ContentPacks
         {
             if (Position != null)
                 return Position;
-            return Sections[index].Position;
+            if(Sections.Count > index)
+                return Sections[index].Position;
+            return "0 0";
         }
 
-        public string GetDescription()
+        public string GetEntry()
+        {
+            if (Entry == null)
+                return "";
+            return Entry;
+        }
+
+        public string GetDescription(States.FarmHouseState state = null)
         {
             if (Description == null)
                 return "";
+            if (Description.Contains('{') || Description.Contains('}') && state != null)
+            {
+                return PackHandler.Evaluate(PackHandler.ParseOperation(Description, state, this)).ToString();
+            }
             return Description;
         }
 
-        public string GetName()
+        public string GetName(States.FarmHouseState state = null)
         {
             if (Name == null)
             {
                 if (IsBase())
                     return "Level " + GetBase() + " House";
             }
+            if((Name.Contains('{') || Name.Contains('}')) && state != null)
+            {
+                return PackHandler.Evaluate(PackHandler.ParseOperation(Name, state, this)).ToString();
+            }
             return Name;
+        }
+
+        public string GetGroup()
+        {
+            if (Group == null)
+            {
+                if (IsBase())
+                    return "Base";
+                return "";
+            }
+            return Group;
+        }
+
+        public List<string> GetWith()
+        {
+            if (With == null)
+                return new List<string>();
+            return With;
+        }
+
+        public List<SectionModel> GetSections()
+        {
+            if (Sections != null)
+                return Sections;
+            return new List<SectionModel> { new SectionModel { Map = Map, Position = Position } };
         }
 
         public int GetPrice()
         {
             if (Cost == null || !Cost.ContainsKey("Money"))
                 return 0;
-            return Cost["Money"];
+            if(int.TryParse(Cost["Money"], out int price))
+                return price;
+            if (double.TryParse(PackHandler.Evaluate(PackHandler.ParseOperation(Cost["Money"], States.StatesHandler.GetHouseState(Utility.getHomeOfFarmer(Game1.player)), this)).ToString(), out double price1))
+                return (int)price1;
+            return 0;
         }
 
-        public List<string> GetRequirements()
+        public string GetRequirements()
         {
             if (Requirements == null)
-                return new List<string>();
+                return "";
             return Requirements;
         }
 
@@ -82,7 +131,11 @@ namespace FarmHouseRedone.ContentPacks
                     continue;
                 StardewValley.Object matObject = new StardewValley.Object(Convert.ToInt32(material), 1);
                 //StardewValley.Object matObject = new StardewValley.Object(ObjectHandling.ObjectIDHelper.GetID(material), 1);
-                materials[matObject] = Cost[material];
+                if (int.TryParse(Cost[material], out int qty))
+                    materials[matObject] = qty;
+                if (double.TryParse(PackHandler.Evaluate(PackHandler.ParseOperation(Cost[material], States.StatesHandler.GetHouseState(Utility.getHomeOfFarmer(Game1.player)), this)).ToString(), out double qty1))
+                    materials[matObject] = (int)qty1;
+
             }
             return materials;
         }
@@ -94,7 +147,7 @@ namespace FarmHouseRedone.ContentPacks
 
         public int GetBase()
         {
-            if (!IsBase())
+            if (Base == null)
                 return -1;
             try 
             {
@@ -107,9 +160,9 @@ namespace FarmHouseRedone.ContentPacks
             return -1;
         }
 
-        public Vector2 ConvertPosition(Vector2 offset, Map map)
+        public Vector2 ConvertPosition(Vector2 offset, Map map, string sectionPos)
         {
-            string[] positionValues = this.GetPosition().Split(' ');
+            string[] positionValues = sectionPos.Split(' ');
             try
             {
                 Vector2 mapBounds = MapUtilities.GetMapSize(map);

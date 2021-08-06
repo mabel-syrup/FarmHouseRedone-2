@@ -30,6 +30,9 @@ namespace FarmHouseRedone.UI
         public bool isSelected = false;
         public bool didHover = false;
 
+        private string name;
+        private string description;
+
         SelectionMadeBehavior b;
 
         public Vector2 animationController;
@@ -37,6 +40,8 @@ namespace FarmHouseRedone.UI
         public UpgradeMenuItem(string packID, UpgradeModel upgrade, int x, int y, bool bottomRow, SelectionMadeBehavior b)
         {
             this.upgrade = upgrade;
+            name = upgrade.GetName(States.StatesHandler.GetHouseState(Utility.getHomeOfFarmer(Game1.player)));
+            description = upgrade.GetDescription();
             animationController = Vector2.Zero;
             this.bounds = new Rectangle(x, y, 600, 200);
             this.bottomRow = bottomRow;
@@ -112,7 +117,7 @@ namespace FarmHouseRedone.UI
         public bool InBounds(int x, int y)
         {
             return (new Rectangle(bounds.X + (int)animationController.X, bounds.Y + (int)animationController.Y + 40 + yOffset, bounds.Width, bounds.Height).Contains(x, y) || 
-                new Rectangle(bounds.X + 150 - 24 + (int)animationController.X, bounds.Y - 20 + yOffset + (int)animationController.Y, (int)Game1.dialogueFont.MeasureString(upgrade.GetName()).X + 24, 60).Contains(x, y));
+                new Rectangle(bounds.X + 150 - 24 + (int)animationController.X, bounds.Y - 20 + yOffset + (int)animationController.Y, (int)Game1.dialogueFont.MeasureString(name).X + 24, 60).Contains(x, y));
         }
 
         public void Draw(SpriteBatch b)
@@ -145,12 +150,12 @@ namespace FarmHouseRedone.UI
 
         private void DrawText(SpriteBatch b)
         {
-            int nameWidth = (int)Game1.dialogueFont.MeasureString(upgrade.GetName()).X;
+            int nameWidth = (int)Game1.dialogueFont.MeasureString(name).X;
             b.Draw(Loader.spriteSheet, new Vector2(this.bounds.X + 150 - 24, this.bounds.Y - 20 + yOffset) + animationController, new Rectangle(upgrade.IsBase() ? 15 : 0, 0, 6, 15), upgrade.ID != null ? Color.White : Color.BlanchedAlmond, 0f, Vector2.Zero, 4f, SpriteEffects.None, 1f);
             b.Draw(Loader.spriteSheet, new Rectangle(bounds.X + 150 + (int)animationController.X, bounds.Y - 20 + yOffset + (int)animationController.Y, nameWidth, 60), new Rectangle(6 + (upgrade.IsBase() ? 15 : 0), 0, 3, 15), upgrade.ID != null ? Color.White : Color.BlanchedAlmond);
             b.Draw(Loader.spriteSheet, new Vector2(this.bounds.X + 150 + nameWidth, this.bounds.Y - 20 + yOffset) + animationController, new Rectangle(9 + (upgrade.IsBase() ? 15 : 0), 0, 6, 15), upgrade.ID != null ? Color.White : Color.BlanchedAlmond, 0f, Vector2.Zero, 4f, SpriteEffects.None, 1f);
-            Utility.drawTextWithShadow(b, upgrade.GetName(), Game1.dialogueFont, new Vector2(bounds.X + 150, bounds.Y - 12 + yOffset) + animationController, Game1.textColor * (upgrade.ID == null ? 0.6f : 1f), shadowIntensity: (upgrade.IsBase() ? 0 : 1));
-            Utility.drawTextWithShadow(b, Strings.Fit(upgrade.GetDescription(), Game1.smallFont, new Vector2(bounds.Width - 166, 100)), Game1.smallFont, new Vector2(bounds.X + 150, bounds.Y + 65 + yOffset) + animationController, Color.White, shadowIntensity: 0);
+            Utility.drawTextWithShadow(b, name, Game1.dialogueFont, new Vector2(bounds.X + 150, bounds.Y - 12 + yOffset) + animationController, Game1.textColor * (upgrade.ID == null ? 0.6f : 1f), shadowIntensity: (upgrade.IsBase() ? 0 : 1));
+            Utility.drawTextWithShadow(b, Strings.Fit(description, Game1.smallFont, new Vector2(bounds.Width - 166, 100)), Game1.smallFont, new Vector2(bounds.X + 150, bounds.Y + 65 + yOffset) + animationController, Color.White, shadowIntensity: 0);
         }
 
         private void DrawCosts(SpriteBatch b)

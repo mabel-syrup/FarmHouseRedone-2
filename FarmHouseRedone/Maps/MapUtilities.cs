@@ -9,6 +9,7 @@ using xTile.Tiles;
 using xTile.Layers;
 using StardewValley;
 using Microsoft.Xna.Framework;
+using StardewModdingAPI;
 
 namespace FarmHouseRedone.Maps
 {
@@ -190,6 +191,35 @@ namespace FarmHouseRedone.Maps
                             }
                             Logger.Log(string.Format("Invalid definition!  Warps must be defined as [x y Destination x y].  There were invalid values for the warp {0}\nThis warp was skipped.", warpStringAttempt), StardewModdingAPI.LogLevel.Warn);
                         }
+                    }
+                    updatedProperties[name] = Strings.Cleanup(adjusted);
+                }
+                if (name == "Return")
+                {
+                    string adjusted = "";
+                    string[] original = Strings.Cleanup(property.Value.ToString()).Split(' ');
+                    try
+                    {
+                        for (int index = 0; index < original.Length;)
+                        {
+                            string mapName = original[index];
+                            int x = Convert.ToInt32(original[index + 1]);
+                            int y = Convert.ToInt32(original[index + 2]);
+                            if (index + 4 < original.Length && int.TryParse(original[index + 3], out int destX) && int.TryParse(original[index + 4], out int destY))
+                            {
+                                adjusted += $"{mapName} {x + xOffset} {y + yOffset} {destX} {destY} ";
+                                index += 5;
+                            }
+                            else
+                            {
+                                adjusted += $"{mapName} {x + xOffset} {y + yOffset} ";
+                                index += 3;
+                            }
+                        }
+                    }
+                    catch (FormatException)
+                    {
+                        Logger.Log("Couldn't parse Return property!  Given \"" + Strings.Cleanup(property.Value.ToString()) + "\".  Make sure each Return Warp is in the format \"Name x y\" or \"Name x y destX destY\"", LogLevel.Warn);
                     }
                     updatedProperties[name] = Strings.Cleanup(adjusted);
                 }

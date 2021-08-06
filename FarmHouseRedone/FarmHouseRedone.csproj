@@ -4,6 +4,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+	<EnableHarmony>true</EnableHarmony>
     <ProjectGuid>{C55A767A-EE64-4679-8FF1-8E4CA0CAE9B6}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
@@ -33,8 +34,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="0Harmony, Version=1.2.0.1, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Lib.Harmony.1.2.0.1\lib\net45\0Harmony.dll</HintPath>
+    <Reference Include="0Harmony, Version=2.1.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Lib.Harmony.2.1.1\lib\net45\0Harmony.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Build" />
     <Reference Include="Microsoft.Build.Framework" />
@@ -72,11 +73,14 @@
     <Compile Include="Maps\MapUtilities.cs" />
     <Compile Include="Maps\Merger.cs" />
     <Compile Include="Maps\Facades\Room.cs" />
+    <Compile Include="Maps\ReturnWarp.cs" />
     <Compile Include="ModEntry.cs" />
     <Compile Include="ObjectHandling\ObjectIDHelper.cs" />
     <Compile Include="Patching\Patcher.cs" />
     <Compile Include="Patching\Patches\DecoratableLocation.cs" />
     <Compile Include="Patching\Patches\FarmHouse.cs" />
+    <Compile Include="Patching\Patches\Furniture.cs" />
+    <Compile Include="Patching\Patches\Game1_warpFarmer_patch.cs" />
     <Compile Include="Patching\Patches\GameLocation.cs" />
     <Compile Include="Patching\Patches\Wallpaper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
+using StardewValley;
 using StardewValley.Locations;
 using FarmHouseRedone.Maps;
 using xTile;
@@ -583,6 +584,9 @@ namespace FarmHouseRedone.States
         public string upgradeID;
 
         public Vector2 offset;
+        public Point entry;
+
+        public List<ReturnWarp> returnWarps;
 
         public List<string> appliedUpgrades;
 
@@ -593,6 +597,8 @@ namespace FarmHouseRedone.States
             offset = Vector2.Zero;
             appliedUpgrades = new List<string>();
             location = house;
+            entry = location.getEntryLocation();
+            SetUpWarps();
             packID = "";
             upgradeID = "";
             currentBase = "";
@@ -608,17 +614,7 @@ namespace FarmHouseRedone.States
             if (daysUntilUpgrade > 0)
                 daysUntilUpgrade--;
             if(daysUntilUpgrade == 0 && upgradeID != "")
-            {
-                ContentPacks.UpgradeModel model = ContentPacks.PackHandler.GetPackData(packID).GetModel(upgradeID);
-                if (model.IsBase())
-                {
-                    appliedUpgrades.Add(model.ID);
-                }
-                else
-                {
-                    appliedUpgrades.Add(model.ID);
-                }
-            }
+                AddUpgrade(upgradeID);
             mapPath = GetBaseMapPath();
             Reset();
         }
@@ -630,9 +626,37 @@ namespace FarmHouseRedone.States
 
         public void Reset()
         {
+            Reposition(-offset);
             offset = Vector2.Zero;
+            entry = location.GetMapPropertyPosition("Entry", location.getEntryLocation().X, location.getEntryLocation().Y);
             UpdateFromMapPath();
+            SetUpWarps();
             StatesHandler.GetDecorState(location).Reset();
+        }
+
+        public void PurgeUpgradedGroups()
+        {
+            Dictionary<string, string> grouped = new Dictionary<string, string>();
+            List<string> ungrouped = new List<string>();
+            foreach(ContentPacks.UpgradeModel model in ContentPacks.PackHandler.GetPackData(packID).Upgrades)
+            {
+                if (appliedUpgrades.Contains(model.ID))
+                {
+                    if (model.GetGroup() != "")
+                        grouped[model.GetGroup()] = model.ID;
+                    else
+                        ungrouped.Add(model.ID);
+                }
+            }
+            List<string> purgedList = new List<string>();
+            foreach(string ID in appliedUpgrades)
+            {
+                if (grouped.ContainsValue(ID) || ungrouped.Contains(ID))
+                    purgedList.Add(ID);
+            }
+            Logger.Log("AppliedUpgrades before purge: [" + Strings.ListToString(appliedUpgrades) + "]");
+            appliedUpgrades = purgedList;
+            Logger.Log("AppliedUpgrades after purge: [" + Strings.ListToString(appliedUpgrades) + "]");
         }
 
         public void UpdateMap()
@@ -646,40 +670,94 @@ namespace FarmHouseRedone.States
                 }
             }
             location.updateMap();
-            //StatesHandler.GetDecorState(location).Reset();
+            entry = location.GetMapPropertyPosition("Entry", location.getEntryLocation().X, location.getEntryLocation().Y);
+            SetUpWarps();
+            StatesHandler.GetDecorState(location).Reset();
+            UnvoidAll();
         }
 
         public void SetCurrentUpgrade(string ID, int days)
         {
+            if (StatesHandler.config.immediately_apply_upgrades)
+            {
+                AddUpgrade(ID, true);
+                return;
+            }
             upgradeID = ID;
             daysUntilUpgrade = days;
+        }
+
+        public void AddUpgrade(string ID, bool applyImmediately = false)
+        {
+            RecursiveAdd(ID);
+            if (applyImmediately)
+            {
+                mapPath = GetBaseMapPath();
+                Reset();
+            }
+        }
+
+        private void RecursiveAdd(string ID)
+        {
+            ContentPacks.UpgradeModel model = ContentPacks.PackHandler.GetPackData(packID).GetModel(ID);
+            appliedUpgrades.Add(model.ID);
+            foreach (string withID in model.GetWith())
+            {
+                if (appliedUpgrades.Contains(withID))
+                    continue;
+                RecursiveAdd(withID);
+            }
         }
 
         public void ApplyUpgrade(ContentPacks.UpgradeModel model)
         {
             IContentPack pack = ContentPacks.PackHandler.GetPack(packID);
             Logger.Log("Pasting upgrade " + model.ID + " at " + model.Position);
-            Map upgradeMap = pack.LoadAsset<Map>(model.GetMap());
-            MapSection upgrade = new MapSection(model.ID, upgradeMap);
-            Vector2 position = model.ConvertPosition(offset, location.map);
-            upgrade.Paste(this, (int)position.X, (int)position.Y);
+            foreach(ContentPacks.SectionModel section in model.GetSections())
+            {
+                Map upgradeMap = pack.LoadAsset<Map>(section.Map);
+                MapSection upgrade = new MapSection(model.ID, upgradeMap);
+                Vector2 position = model.ConvertPosition(offset, location.map, section.Position);
+                upgrade.Paste(this, (int)position.X, (int)position.Y);
+            }
+        }
+
+        public bool HasUpgradeGroup(string groupName)
+        {
+            foreach(ContentPacks.UpgradeModel model in ContentPacks.PackHandler.GetPackData(packID).Upgrades)
+            {
+                if (appliedUpgrades.Contains(model.ID) && model.GetGroup().Equals(groupName))
+                    return true;
+            }
+            return false;
         }
 
         public string GetBaseMapPath()
         {
-            
+            PurgeUpgradedGroups();
             try
             {
                 if(packID != "" && packID != "FHRVanillaInternalOnly")
                 {
                     ContentPacks.Pack pack = ContentPacks.PackHandler.GetPackData(packID);
+                    foreach(string ID in appliedUpgrades)
+                    {
+                        ContentPacks.UpgradeModel model = ContentPacks.PackHandler.GetPackData(packID).GetModel(ID);
+                        if (model.IsBase())
+                        {
+                            Logger.Log("Applying " + model.ID + " as base.");
+                            currentBase = model.ID;
+                            location.upgradeLevel = model.GetBase();
+                            return model.GetMap();
+                        }
+                    }
                     foreach (ContentPacks.UpgradeModel model in ContentPacks.PackHandler.GetPackData(packID).Upgrades)
                     {
                         if (appliedUpgrades.Contains(model.ID) && model.IsBase())
                         {
                             if (model.GetBase() >= location.upgradeLevel)
                             {
-                                Logger.Log("Applying " + model.ID + " as base.");
+                                Logger.Log("No base found among applied upgrades.  Applying " + model.ID + " as base.");
                                 currentBase = model.ID;
                                 location.upgradeLevel = model.GetBase();
                                 return model.GetMap();
@@ -716,6 +794,7 @@ namespace FarmHouseRedone.States
             location.updateSeasonalTileSheets();
             location.map.LoadTileSheets(StardewValley.Game1.mapDisplayDevice);
             location.updateMap();
+            location.updateWarps();
             UpdateMap();
         }
 
@@ -724,6 +803,220 @@ namespace FarmHouseRedone.States
             this.offset += by;
             MapUtilities.OffsetProperties(location.map, (int)by.X, (int)by.Y);
             location.updateWarps();
+            Reposition(by);
+        }
+
+        public void Reposition(Vector2 by)
+        {
+            Logger.Log($"Repositioning contents by ({by.X}, {by.Y})");
+            location.overlayObjects.Clear();
+            location.shiftObjects((int)by.X, (int)by.Y);
+            foreach(StardewValley.Character c in location.characters)
+            {
+                c.Position += by * 64f;
+            }
+            foreach(StardewValley.Farmer player in StardewValley.Game1.getAllFarmers())
+            {
+                if (player.currentLocation == location)
+                    player.Position += by * 64f;
+            }
+        }
+
+        public void UnvoidAll()
+        {
+            foreach(StardewValley.Objects.Furniture furniture in location.furniture)
+            {
+                bool canBePlaced = IsFurnitureSpotValid(furniture);
+                if (!canBePlaced)
+                    Unvoid(furniture);
+            }
+        }
+
+        internal bool IsFurnitureSpotValid(StardewValley.Objects.Furniture furniture)
+        {
+            if (furniture.furniture_type == StardewValley.Objects.Furniture.rug)
+            {
+                Logger.Log(furniture.name + " was rug, looking for placement location...");
+                for (int x = furniture.boundingBox.X; x < furniture.boundingBox.Right; x++)
+                {
+                    for (int y = furniture.boundingBox.Y; y < furniture.boundingBox.Bottom; y++)
+                    {
+                        if (!IsTilePassableForRugs(new xTile.Dimensions.Location(x, y), Game1.viewport))
+                        {
+                            Logger.Log("Tile (" + x + ", " + y + ") was not passable for rugs!");
+                            return false;
+                        }
+                    }
+                }
+                Logger.Log("Rug can be placed here.");
+                return true;
+            }
+            else
+            {
+                Logger.Log(furniture.name + " was not rug, was " + furniture.furniture_type);
+            }
+            Vector2 realLocation = furniture.tileLocation;
+            furniture.tileLocation.Value = Vector2.Zero;
+            ReclaculateFurniture(furniture);
+            bool isValid = furniture.canBePlacedHere(location, realLocation);
+            bool isPartiallyStuck = !IsCompletelyClear(furniture, realLocation);
+            bool isVoid = IsTileVoid(realLocation);
+            Logger.Log("Spot valid? " + isValid.ToString() + " Partially Stuck? " + isPartiallyStuck.ToString() + " Void? " + isVoid.ToString());
+            furniture.tileLocation.Value = realLocation;
+            ReclaculateFurniture(furniture);
+            return isValid && !isPartiallyStuck && !isVoid;
+        }
+
+        internal void ReclaculateFurniture(StardewValley.Objects.Furniture furniture)
+        {
+            furniture.boundingBox.X = (int)furniture.tileLocation.Value.X * 64;
+            furniture.boundingBox.Y = (int)furniture.tileLocation.Value.Y * 64;
+            furniture.updateDrawPosition();
+        }
+
+        internal bool IsCompletelyClear(StardewValley.Objects.Furniture furniture, Vector2 point)
+        {
+
+            for (int x1 = (int)point.X; x1 < point.X + furniture.getTilesWide(); ++x1)
+            {
+                for (int y1 = (int)point.Y; y1 < point.Y + furniture.getTilesHigh(); ++y1)
+                {
+                    if (location.doesTileHaveProperty(x1, y1, "NoFurniture", "Back") != null)
+                    {
+                        return false;
+                    }
+                    if (location.getTileIndexAt(x1, y1, "Buildings") != -1)
+                        return false;
+                }
+            }
+            return true;
+        }
+
+        internal bool IsTileVoid(Vector2 tileLocation)
+        {
+            Logger.Log("Checking if " + tileLocation.ToString() + " is in the void...");
+            //This spot is not even on the map, so it's definitely the void
+            if (!location.isTileOnMap(tileLocation))
+            {
+                Logger.Log("Tile is off the map.");
+                return true;
+            }
+
+            Map map = location.map;
+            //There's a tile here
+            if (map.GetLayer("Back").Tiles[(int)tileLocation.X, (int)tileLocation.Y] != null)
+            {
+                Logger.Log("Tile exists...");
+                int tileIndex = map.GetLayer("Back").Tiles[(int)tileLocation.X, (int)tileLocation.Y].TileIndex;
+                //The void tile is on index 0 on both sheets, so we can exit out as soon as we see it's not 0
+                if (tileIndex != 0)
+                {
+                    Logger.Log("Tile of index " + tileIndex + " was not 0, so not void.");
+                    return false;
+                }
+                //Get the image source for the tilesheet.  This allows people to name the sheets anything they want
+                string sheetSource = map.GetLayer("Back").Tiles[(int)tileLocation.X, (int)tileLocation.Y].TileSheet.ImageSource;
+                //The void tiles are found in townInterior and farmhouse_tiles
+                Logger.Log("Tile was on townInterior? " + sheetSource.Contains("townInterior").ToString() + " Tile was on farmhouse_tiles? " + sheetSource.Contains("farmhouse_tiles").ToString());
+                return (sheetSource.Contains("townInterior") || sheetSource.Contains("farmhouse_tiles"));
+            }
+            else
+            {
+                Logger.Log("Tile was null.");
+                return true;
+            }
+        }
+
+        internal bool IsTilePassableForRugs(xTile.Dimensions.Location tileLocation, xTile.Dimensions.Rectangle viewport)
+        {
+            xTile.ObjectModel.PropertyValue propertyValue = (xTile.ObjectModel.PropertyValue)null;
+            xTile.Tiles.Tile tile1 = location.map.GetLayer("Back").PickTile(tileLocation, viewport.Size);
+            if (tile1 != null)
+                tile1.TileIndexProperties.TryGetValue("Passable", out propertyValue);
+            xTile.Tiles.Tile tile2 = location.map.GetLayer("Buildings").PickTile(tileLocation, viewport.Size);
+            if (propertyValue == null && tile2 == null)
+                return tile1 != null;
+            return false;
+        }
+
+        public void Unvoid(StardewValley.Objects.Furniture furniture)
+        {
+            DecoratableState state = StatesHandler.GetDecorState(location);
+            Room preferredRoom = null;
+            Point tileLocation = new Point((int)furniture.TileLocation.X, (int)furniture.TileLocation.Y);
+            foreach (Room room in state.rooms.Values)
+            {
+                if (room.PointWithinRoom(tileLocation))
+                {
+                    if (preferredRoom == null || room.GetLinearDistanceToCenter(tileLocation) <= preferredRoom.GetLinearDistanceToCenter(tileLocation))
+                        preferredRoom = room;
+                }
+            }
+            if (preferredRoom == null)
+                Logger.Log($"{furniture.name} has no preferred room.");
+            else
+                Logger.Log($"{furniture.name} prefers to be placed in the \"{preferredRoom.name}\"");
+        }
+
+        public void SetUpWarps()
+        {
+            returnWarps = new List<ReturnWarp>();
+            if (!location.map.Properties.ContainsKey("Return"))
+            {
+                Logger.Log("Base map does not contain a definition for Return");
+                return;
+            }
+            string[] warpString = Strings.Cleanup(location.map.Properties["Return"].ToString()).Split(' ');
+
+            try
+            {
+                for (int index = 0; index < warpString.Length;)
+                {
+                    string mapName = warpString[index];
+                    int x = Convert.ToInt32(warpString[index + 1]);
+                    int y = Convert.ToInt32(warpString[index + 2]);
+                    if(index + 4 < warpString.Length && int.TryParse(warpString[index+3], out int destX) && int.TryParse(warpString[index+4], out int destY))
+                    {
+                        returnWarps.Add(new ReturnWarp(mapName, new Vector2(x, y), new Vector2(destX, destY)));
+                        Logger.Log($"Added new return warp from {mapName} at ({x}, {y}) when the warp points to ({destX}, {destY})");
+                        index += 5;
+                    }
+                    else
+                    {
+                        returnWarps.Add(new ReturnWarp(mapName, new Vector2(x, y)));
+                        Logger.Log($"Added new return warp from {mapName} at ({x}, {y})");
+                        index += 3;
+                    }
+                }
+            }
+            catch (FormatException)
+            {
+                Logger.Log("Couldn't parse Return property!  Given \"" + Strings.Cleanup(location.map.Properties["Return"]) + "\".  Make sure each Return Warp is in the format \"Name x y\" or \"Name x y destX destY\"", LogLevel.Warn);
+            }
+        }
+
+        public Vector2 GetWarpDestination(StardewValley.GameLocation fromLocation)
+        {
+            if(fromLocation == StardewValley.Game1.getFarm() && location.map.Properties.ContainsKey("Entry"))
+            {
+                Logger.Log("Player entered farmhouse from farm.");
+                if (StardewValley.Game1.xLocationAfterWarp == 3 && StardewValley.Game1.yLocationAfterWarp == 11)
+                    return new Vector2(entry.X, entry.Y);
+            }
+            foreach(ReturnWarp warp in returnWarps)
+            {
+                //Search through specific warps first, that way maps can override a global return if needed.
+                if (warp.IsGlobal())
+                    continue;
+                if (warp.UseReturn())
+                    return warp.location;
+            }
+            foreach(ReturnWarp warp in returnWarps)
+            {
+                if (warp.UseReturn())
+                    return warp.location;
+            }
+            return new Vector2(-1, -1);
         }
 
         public void Load()
@@ -733,8 +1026,9 @@ namespace FarmHouseRedone.States
             {
                 Logger.Log("No saved data for " + location.name + location.uniqueName ?? "");
                 Logger.Log("Prompting for pack choice...");
+                if (Delegates.onMenuClosed.Contains(PromptForPack))
+                    return;
                 Delegates.onMenuClosed.Add(PromptForPack);
-                
             }
             else
             {
@@ -742,6 +1036,8 @@ namespace FarmHouseRedone.States
                 appliedUpgrades = model.AppliedUpgrades ?? new List<string>();
                 daysUntilUpgrade = model.DaysUntilUpgrade;
                 upgradeID = model.UpgradeID ?? "";
+                offset = model.Offset != null ? new Vector2(model.Offset[0],model.Offset[1]) : Vector2.Zero;
+                //Reposition(offset);
                 Logger.Log(Environment.StackTrace);
                 Logger.Log("Loaded pack FHR Pack: " + packID);
             }
@@ -752,10 +1048,36 @@ namespace FarmHouseRedone.States
             StardewValley.Game1.activeClickableMenu = new UI.HouseMenu(GetPackChoice);
         }
 
+        public void RepositionForBase(ContentPacks.UpgradeModel model)
+        {
+            string[] positionValues = model.GetPosition().Split(' ');
+            try
+            {
+                Vector2 position = Vector2.Zero;
+                position.X = Convert.ToInt32(positionValues[0]) + offset.X;
+                position.Y = Convert.ToInt32(positionValues[1]) + offset.Y;
+                Reposition(position);
+            }
+            catch (FormatException)
+            {
+                Logger.Log($"Failed to parse base position!  Given {model.GetPosition()}", LogLevel.Warn);
+            }
+        }
+
         public void GetPackChoice(string chosen)
         {
             packID = chosen;
             Logger.Log("Chose " + packID);
+
+            foreach (ContentPacks.UpgradeModel model in ContentPacks.PackHandler.GetPackData(packID).Upgrades)
+            {
+                if (model.GetBase() == 0)
+                {
+                    appliedUpgrades.Add(model.ID);
+                    RepositionForBase(model);
+                }
+            }
+
             mapPath = GetBaseMapPath();
             UpdateFromMapPath();
             Save();
@@ -769,7 +1091,8 @@ namespace FarmHouseRedone.States
                 PackID = packID,
                 AppliedUpgrades = appliedUpgrades,
                 DaysUntilUpgrade = daysUntilUpgrade,
-                UpgradeID = upgradeID
+                UpgradeID = upgradeID,
+                Offset = new int[] { (int)offset.X, (int)offset.Y }
             };
             Loader.data.WriteSaveData<IO.FarmHouseModel>("FH-" + location.name + location.uniqueName ?? "", model);
         }

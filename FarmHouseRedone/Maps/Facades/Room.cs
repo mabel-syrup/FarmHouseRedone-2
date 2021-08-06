@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using FarmHouseRedone.States;
 using xTile;
+using xTile.Layers;
 using Microsoft.Xna.Framework;
 
 namespace FarmHouseRedone.Maps
@@ -87,12 +88,18 @@ namespace FarmHouseRedone.Maps
             }
         }
 
-        public bool PointWithinWall(Point p)
+        public bool PointWithinWall(Point p, Map map)
         {
             foreach(Facade wall in walls)
             {
                 if (wall.region.Contains(p))
-                    return true;
+                {
+                    foreach(Layer layer in map.Layers)
+                    {
+                        if (layer.Tiles[p.X, p.Y] != null && layer.Tiles[p.X, p.Y].TileSheet.ImageSource.Contains("walls_and_floors") && layer.Tiles[p.X,p.Y].TileIndex < 336)
+                            return true;
+                    }
+                }
             }
             return false;
         }
@@ -105,6 +112,40 @@ namespace FarmHouseRedone.Maps
                     return true;
             }
             return false;
+        }
+
+        public bool IsEmpty()
+        {
+            return walls.Count == 0 && floors.Count == 0;
+        }
+
+        public bool PointWithinRoom(Point p)
+        {
+            if (IsEmpty())
+                return false;
+            return GetRoomBounds().Contains(p);
+        }
+
+        public float GetLinearDistanceToCenter(Point p)
+        {
+            if (IsEmpty())
+                return float.PositiveInfinity;
+            Point center = GetRoomBounds().Center;
+            return (float)Math.Sqrt(Math.Pow(p.X - center.X, 2) + Math.Pow(p.Y - center.Y, 2));
+        }
+
+        public Rectangle GetRoomBounds()
+        {
+            Rectangle roomBounds = walls.Count > 0 ? walls[0].region : floors[0].region;
+            foreach(Wall wall in walls)
+            {
+                roomBounds.X = Math.Min(roomBounds.X, wall.region.X);
+                roomBounds.Y = Math.Min(roomBounds.Y, wall.region.Y);
+                roomBounds.Width = Math.Max(roomBounds.Right, wall.region.Right) - roomBounds.X;
+                roomBounds.Height = Math.Max(roomBounds.Bottom, wall.region.Bottom) - roomBounds.Y;
+            }
+            Logger.Log($"{name}'s bounds: {roomBounds}");
+            return roomBounds;
         }
 
         public void SetWall(int index, Map map)
